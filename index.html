@@ -138,6 +138,7 @@
             -webkit-appearance: none;
             -webkit-tap-highlight-color: transparent;
             margin-bottom: 12px;
+            touch-action: manipulation;
         }
 
         button:hover:not(:disabled) {
@@ -152,27 +153,8 @@
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-        }
-
-        .rules {
-            background: rgba(30, 30, 80, 0.3);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            font-size: 13px;
-            line-height: 1.6;
-            color: #c0c0ff;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .rules ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .rules li {
-            margin-bottom: 6px;
+            transform: none !important;
+            box-shadow: none !important;
         }
 
         .phase-indicator {
@@ -328,44 +310,36 @@
             text-align: center;
         }
 
-        .elimination-phase-subtitle {
-            font-size: 14px;
-            color: #a0a0ff;
-            text-align: center;
-            margin-bottom: 20px;
-            font-style: italic;
-        }
-
         .elimination-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 12px;
             margin-top: 20px;
+            touch-action: manipulation;
         }
 
         .player-select-btn {
-            padding: 12px 16px;
+            padding: 14px 16px;
             background-color: rgba(99, 102, 241, 0.2);
             border: 2px solid rgba(99, 102, 241, 0.5);
             border-radius: 8px;
             color: #fff;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
             -webkit-appearance: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .player-select-btn.selected {
-            background-color: #ff3d5c;
-            border-color: #ff3d5c;
-            transform: scale(1.05);
-        }
-
-        .player-select-btn:hover:not(.selected) {
-            border-color: #8a94ff;
+            background-color: #ff3d5c !important;
+            border-color: #ff3d5c !important;
+            color: #ffffff !important;
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(255, 61, 92, 0.6);
         }
 
         .voting-title {
@@ -384,24 +358,13 @@
             text-align: center;
         }
 
-        .pass-phone {
-            font-size: 16px;
-            color: #a78bfa;
-            text-align: center;
-            padding: 20px;
-            background: rgba(99, 102, 241, 0.1);
-            border: 1px solid rgba(168, 85, 247, 0.3);
-            border-radius: 8px;
-            margin-top: 20px;
-            animation: pulse 2s infinite;
-        }
-
         .voting-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 12px;
             margin-bottom: 30px;
             width: 100%;
+            touch-action: manipulation;
         }
 
         .vote-option {
@@ -410,23 +373,22 @@
             border: 2px solid rgba(77, 127, 255, 0.5);
             border-radius: 8px;
             color: #fff;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
             text-align: center;
             -webkit-appearance: none;
             -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .vote-option.selected {
-            background-color: #4d7fff;
-            border-color: #4d7fff;
-            transform: scale(1.05);
-        }
-
-        .vote-option:hover:not(.selected) {
-            border-color: #6d9dff;
+            background-color: #4d7fff !important;
+            border-color: #4d7fff !important;
+            color: #ffffff !important;
+            transform: scale(1.03);
+            box-shadow: 0 0 15px rgba(77, 127, 255, 0.6);
         }
 
         .voting-content, .results-content, .reveal-content, .discussion-content, .elimination-content {
@@ -446,77 +408,6 @@
             margin: 0 0 30px 0;
             text-align: center;
             color: #fff;
-        }
-
-        .vote-results {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 30px;
-            background: rgba(30, 30, 80, 0.3);
-            padding: 20px;
-            border-radius: 12px;
-            width: 100%;
-        }
-
-        .vote-result {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.2);
-        }
-
-        .vote-count {
-            color: #ff3d5c;
-            font-size: 12px;
-            letter-spacing: 2px;
-        }
-
-        .elimination-box {
-            background: rgba(30, 30, 80, 0.4);
-            border: 2px solid;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .elimination-text {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0 0 10px 0;
-            color: #fff;
-        }
-
-        .role-reveal {
-            font-size: 14px;
-            color: #a0a0ff;
-            margin: 0;
-        }
-
-        .win-box {
-            background: rgba(46, 204, 113, 0.15);
-            border: 2px solid #2ecc71;
-            border-radius: 12px;
-            padding: 30px;
-            margin-bottom: 30px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .win-text {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2ecc71;
-            margin-bottom: 10px;
-        }
-
-        .win-details {
-            font-size: 14px;
-            color: #a0a0ff;
         }
 
         .game-status {
@@ -542,31 +433,8 @@
             justify-content: space-between;
         }
 
-        .player-status {
-            font-size: 12px;
-            color: #ff3d5c;
-        }
-
-        .tie-box {
-            background: rgba(255, 157, 77, 0.15);
-            border: 2px solid #ff9d4d;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .tie-text {
-            font-size: 20px;
-            font-weight: 700;
-            color: #ff9d4d;
-            margin-bottom: 10px;
-        }
-
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
         @media (max-width: 600px) {
             h1 { font-size: 36px; }
@@ -576,7 +444,7 @@
             .role-badge { font-size: 20px; padding: 16px 32px; }
             .card { padding: 20px; }
             .voting-grid, .elimination-grid { grid-template-columns: repeat(2, 1fr); }
-            button { font-size: 15px; padding: 12px 16px; }
+            button { font-size: 15px; padding: 14px 16px; }
         }
     </style>
 </head>
@@ -591,16 +459,18 @@
             phase: 'setup',
             players: [],
             currentPlayerIndex: 0,
-            alivePlayers: [], // This tracks players eligible to cast a vote this round
+            alivePlayers: [], // Roster of active voters for the current round
             holdProgress: 0,
             revealed: false,
             votes: {},
             selectedVote: null,
             selectedElimination: null,
+            pendingElimination: null, // Staging variable for night elimination
             eliminationGesture: null,
             gameLog: [],
             roundNumber: 1,
-            lastVotedOut: null // Safely pass the text reference to the layout rendering tree
+            lastVotedOut: null,
+            lastNightEliminated: null
         };
 
         let holdInterval = null;
@@ -618,6 +488,17 @@
 
         function getImpostor() {
             return state.players.find(p => p.role === 'Impostor');
+        }
+
+        function selectElimination(value) {
+            console.log("Selected Elimination Target:", value);
+            state.selectedElimination = value;
+            render();
+        }
+
+        function selectVote(id) {
+            state.selectedVote = id;
+            render();
         }
 
         function render() {
@@ -645,7 +526,7 @@
                         <div class="card">
                             <label>Enter player names (one per line):</label>
                             <textarea id="playerNames" placeholder="Alice&#10;Bob&#10;Charlie&#10;Diana&#10;Eva"></textarea>
-                            <button onclick="startGame()">Start Game</button>
+                            <button onclick="startGame(event)" ontouchstart="startGame(event)">Start Game</button>
                         </div>
                     </div>
                 </div>
@@ -679,7 +560,7 @@
                                 </div>
                             ` : ''}
                         </div>
-                        ${state.revealed ? `<button onclick="nextPlayer()">Hide Role & Next Player</button>` : ''}
+                        ${state.revealed ? `<button onclick="nextPlayer(event)" ontouchstart="nextPlayer(event)">Hide Role & Next Player</button>` : ''}
                     </div>
                 </div>
             `;
@@ -700,7 +581,7 @@
                             <h3>Active Players (${alive.length})</h3>
                             <div class="player-list">${alive.map(p => `<div class="player-item">${p.name}</div>`).join('')}</div>
                         </div>
-                        <button onclick="goToElimination()">Elimination Phase</button>
+                        <button onclick="goToElimination(event)" ontouchstart="goToElimination(event)">Elimination Phase</button>
                     </div>
                 </div>
             `;
@@ -719,66 +600,53 @@
                         <div class="elimination-phase-box">
                             <div class="elimination-phase-title">Who Was Secretly Eliminated?</div>
                             <div class="elimination-grid">
-                                ${selectable.map(p => `
-                                    <button class="player-select-btn ${state.selectedElimination === p.id ? 'selected' : ''}" onclick="selectElimination(${p.id})">${p.name}</button>
-                                `).join('')}
-                                <button class="player-select-btn ${state.selectedElimination === 'none' ? 'selected' : ''}" onclick="selectElimination('none')">No One</button>
+                                ${selectable.map(p => {
+                                    const isSel = state.selectedElimination === p.id;
+                                    return `<button class="player-select-btn ${isSel ? 'selected' : ''}" 
+                                                onclick="selectElimination(${p.id})" 
+                                                ontouchstart="event.stopPropagation(); selectElimination(${p.id});">
+                                                ${p.name}
+                                            </button>`;
+                                }).join('')}
+                                <button class="player-select-btn ${state.selectedElimination === 'none' ? 'selected' : ''}" 
+                                    onclick="selectElimination('none')" 
+                                    ontouchstart="event.stopPropagation(); selectElimination('none');">
+                                    Skip Elimination
+                                </button>
                             </div>
                         </div>
-                        <button onclick="confirmElimination()" ${state.selectedElimination === null ? 'disabled' : ''}>Confirm & Go to Voting</button>
+                        <button onclick="confirmElimination(event)" ontouchstart="confirmElimination(event)" ${state.selectedElimination === null ? 'disabled' : ''}>
+                            Confirm & Go to Voting
+                        </button>
                     </div>
                 </div>
             `;
         }
 
-        /**
-         * Dynamic Elimination Confirmation Logic
-         */
-        function confirmElimination() {
+        function confirmElimination(e) {
+            if (e && e.cancelable) e.preventDefault();
             if (state.selectedElimination === null) return;
 
-            if (state.selectedElimination !== 'none') {
-                const targets = state.players.find(p => p.id === state.selectedElimination);
-                if (targets) {
-                    targets.alive = false;
-                    if (targets.role === 'Detective') {
-                        state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
-                        state.phase = 'gameover';
-                        render();
-                        return;
-                    }
-                }
-            }
-
-            if (checkWinConditions()) {
-                state.phase = 'gameover';
-                render();
-                return;
-            }
-
-            // FIXED: Set voting roster. Only players who are alive RIGHT NOW are added to cast votes.
+            // RULE CHANGE: Roster captured before elimination occurs. Everyone gets to vote this round.
             state.alivePlayers = getAlivePlayers();
+            
+            // Postpone death state by writing to staging variable
+            state.pendingElimination = state.selectedElimination;
+
             state.currentPlayerIndex = 0;
             state.selectedVote = null;
             state.votes = {};
             state.phase = 'voting';
 
-            // Trace Logs before entering loop execution context
-            console.log("--- VOTING LOOP INITIALIZED ---");
-            console.log("Voters pool (state.alivePlayers):", state.alivePlayers.map(p => p.name));
-            console.log("Initial position index:", state.currentPlayerIndex);
-
+            console.log("Voting roster locked for current round:", state.alivePlayers.map(p => p.name));
             render();
         }
 
         function renderVoting(app) {
             const currentVoter = state.alivePlayers[state.currentPlayerIndex];
             
-            // FIXED: Selectable options must draw targets dynamically from the active live list.
-            // Dead players never appear in voting target selection grids.
+            // Target selection rules: Can vote for any currently alive player except yourself
             const selectableOptions = getAlivePlayers().filter(p => p.id !== currentVoter.id);
-
-            console.log(`Rendering vote screen for: ${currentVoter.name} (Index: ${state.currentPlayerIndex})`);
 
             app.innerHTML = `
                 <div class="container">
@@ -788,43 +656,37 @@
                         <h2 class="voting-title">Cast Your Vote</h2>
                         <p class="voting-subtitle">Pass phone to: <strong>${currentVoter.name}</strong></p>
                         <div class="voting-grid">
-                            ${selectableOptions.map(p => `
-                                <button class="vote-option ${state.selectedVote === p.id ? 'selected' : ''}" onclick="selectVote(${p.id})">${p.name}</button>
-                            `).join('')}
+                            ${selectableOptions.map(p => {
+                                const isSel = state.selectedVote === p.id;
+                                return `<button class="vote-option ${isSel ? 'selected' : ''}" 
+                                            onclick="selectVote(${p.id})" 
+                                            ontouchstart="event.stopPropagation(); selectVote(${p.id});">
+                                            ${p.name}
+                                        </button>`;
+                            }).join('')}
                         </div>
-                        <button onclick="submitVote()" ${state.selectedVote === null ? 'disabled' : ''}>Submit Vote</button>
+                        <button onclick="submitVote(event)" ontouchstart="submitVote(event)" ${state.selectedVote === null ? 'disabled' : ''}>
+                            Submit Vote
+                        </button>
                     </div>
                 </div>
             `;
         }
 
-        function selectVote(id) {
-            state.selectedVote = id;
-            render();
-        }
-
-        /**
-         * Dynamic Vote Matrix Verification Engine
-         */
-        function submitVote() {
+        function submitVote(e) {
+            if (e && e.cancelable) e.preventDefault();
             if (state.selectedVote === null) return;
 
             const currentVoter = state.alivePlayers[state.currentPlayerIndex];
             state.votes[currentVoter.id] = state.selectedVote;
 
-            // Trace state variables
-            console.log(`[VOTE SUBMITTED] Voter: ${currentVoter.name}, Voted For ID: ${state.selectedVote}`);
-            console.log("Current state.votes matrix layout:", JSON.stringify(state.votes));
-
-            // FIXED: Increment the index step first to walk sequentially through the whole voter pool array
             if (state.currentPlayerIndex < state.alivePlayers.length - 1) {
                 state.currentPlayerIndex++;
                 state.selectedVote = null;
-                console.log(`Advancing to next voter. New Index position: ${state.currentPlayerIndex}`);
                 render();
             } else {
-                console.log("All voters have completed their turn. Tallying results...");
-                processVotes();
+                // RULE CHANGE: Voting complete, processing eliminations and round results sequentially
+                processEliminationsAndVotes();
                 
                 if (checkWinConditions()) {
                     state.phase = 'gameover';
@@ -835,11 +697,24 @@
             }
         }
 
-        function processVotes() {
+        function processEliminationsAndVotes() {
+            // 1. Process Night-Phase Elimination Staging Roster first
+            state.lastNightEliminated = null;
+            if (state.pendingElimination && state.pendingElimination !== 'none') {
+                const targetedPlayer = state.players.find(p => p.id === state.pendingElimination);
+                if (targetedPlayer && targetedPlayer.alive) {
+                    targetedPlayer.alive = false;
+                    state.lastNightEliminated = targetedPlayer.name;
+                    if (targetedPlayer.role === 'Detective') {
+                        state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
+                    }
+                }
+            }
+
+            // 2. Process Ballot Counts Tally Sheet calculations
             const voteCounts = {};
-            const activePool = getAlivePlayers();
+            const activePool = getAlivePlayers(); // Calculates against players surviving *after* night execution updates
             
-            // Defend loop metrics: Seed zero values dynamically onto active layout entities
             activePool.forEach(p => { voteCounts[p.id] = 0; });
 
             Object.values(state.votes).forEach(votedId => {
@@ -848,10 +723,7 @@
                 }
             });
 
-            console.log("Final compiled tally sheet calculations:", JSON.stringify(voteCounts));
-
             const voteValues = Object.values(voteCounts);
-            // Defend against empty sets triggering arithmetic breakdown anomalies
             const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
 
             if (maxVotes === 0) {
@@ -865,30 +737,38 @@
 
             if (highestVotedIds.length > 1) {
                 state.lastVotedOut = "tie";
-                console.log("Voting calculation complete: Result is a tie.");
             } else {
                 const targetId = highestVotedIds[0];
                 const targetPlayer = state.players.find(p => p.id === targetId);
-                if (targetPlayer) {
+                if (targetPlayer && targetPlayer.alive) {
                     targetPlayer.alive = false;
                     state.lastVotedOut = targetPlayer.name;
-                    console.log(`Eliminated player by vote match: ${targetPlayer.name} (${targetPlayer.role})`);
+                } else {
+                    state.lastVotedOut = "tie"; // Target was already eliminated during the night phase
                 }
             }
         }
 
         function renderResults(app) {
+            let nightReport = state.lastNightEliminated 
+                ? `During the night, <strong>${state.lastNightEliminated}</strong> was secretly eliminated.` 
+                : "No one was eliminated during the night phase.";
+
+            let voteReport = state.lastVotedOut === 'tie'
+                ? "The day vote resulted in a <strong>tie</strong>! No one was cast out."
+                : `The group voted to cast out <strong>${state.lastVotedOut}</strong>.`;
+
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="results-content">
-                        <h2 class="results-title">Voting Results</h2>
-                        <div class="card" style="width: 100%; text-align: center;">
-                            ${state.lastVotedOut === 'tie' 
-                                ? `<p class="discussion-text"><strong>It's a tie!</strong> No one was voted out this round.</p>` 
-                                : `<p class="discussion-text">The group has spoken. <strong>${state.lastVotedOut}</strong> was cast out.</p>`}
+                        <h2 class="results-title">Round Summary</h2>
+                        <div class="card" style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+                            <p class="discussion-text">${nightReport}</p>
+                            <hr style="border: 0; border-top: 1px solid rgba(99, 102, 241, 0.3);">
+                            <p class="discussion-text">${voteReport}</p>
                         </div>
-                        <button onclick="nextRound()">Continue</button>
+                        <button onclick="nextRound(event)" ontouchstart="nextRound(event)">Continue</button>
                     </div>
                 </div>
             `;
@@ -899,6 +779,9 @@
             const imp = alive.find(p => p.role === 'Impostor');
             const det = alive.find(p => p.role === 'Detective');
             const crew = alive.filter(p => p.role === 'Crewmate');
+
+            // Scan game log messages to prevent double tracking overrides
+            if (state.gameLog.some(log => log.includes('Detective was eliminated'))) return true;
 
             if (!imp) {
                 state.gameLog.push('Crewmates win: The Impostor was successfully voted out!');
@@ -925,13 +808,14 @@
                         <div class="card" style="width: 100%; text-align: center; border-color: #ff3d5c;">
                             <p class="discussion-text">${victoryDeclaration}</p>
                         </div>
-                        <button onclick="resetGame()">Main Menu</button>
+                        <button onclick="resetGame(event)" ontouchstart="resetGame(event)">Main Menu</button>
                     </div>
                 </div>
             `;
         }
 
-        function startGame() {
+        function startGame(e) {
+            if (e && e.cancelable) e.preventDefault();
             const textarea = document.getElementById('playerNames');
             if (!textarea) return;
 
@@ -954,7 +838,8 @@
             render();
         }
 
-        function nextPlayer() {
+        function nextPlayer(e) {
+            if (e && e.cancelable) e.preventDefault();
             if (state.currentPlayerIndex < state.players.length - 1) {
                 state.currentPlayerIndex++;
                 state.revealed = false;
@@ -966,8 +851,12 @@
             }
         }
 
-        function goToElimination() { state.phase = 'elimination'; state.selectedElimination = null; render(); }
-        function selectElimination(val) { state.selectedElimination = val; render(); }
+        function goToElimination(e) { 
+            if (e && e.cancelable) e.preventDefault();
+            state.phase = 'elimination'; 
+            state.selectedElimination = null; 
+            render(); 
+        }
 
         function handleHoldStart(e) {
             if (e && e.cancelable) e.preventDefault();
@@ -998,20 +887,23 @@
             }
         }
 
-        function nextRound() {
+        function nextRound(e) {
+            if (e && e.cancelable) e.preventDefault();
             state.roundNumber++;
             state.phase = 'discussion';
             state.currentPlayerIndex = 0;
             state.selectedVote = null;
             state.selectedElimination = null;
+            state.pendingElimination = null;
             state.votes = {};
             state.revealed = false;
             state.holdProgress = 0;
             render();
         }
 
-        function resetGame() {
-            state = { phase: 'setup', players: [], currentPlayerIndex: 0, alivePlayers: [], holdProgress: 0, revealed: false, votes: {}, selectedVote: null, selectedElimination: null, eliminationGesture: null, gameLog: [], roundNumber: 1, lastVotedOut: null };
+        function resetGame(e) {
+            if (e && e.cancelable) e.preventDefault();
+            state = { phase: 'setup', players: [], currentPlayerIndex: 0, alivePlayers: [], holdProgress: 0, revealed: false, votes: {}, selectedVote: null, selectedElimination: null, pendingElimination: null, eliminationGesture: null, gameLog: [], roundNumber: 1, lastVotedOut: null, lastNightEliminated: null };
             render();
         }
 
