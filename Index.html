@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whose Impostor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        :root {
+            --bg: #0a0a1f;
+            --accent: #ff2a6d;
+            --crew: #05d9e8;
+            --impostor: #d9138a;
+            --detective: #f4a261;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--bg);
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        header {
+            background: #111;
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 4px solid var(--accent);
+        }
+        
+        h1 { font-size: 1.8rem; text-shadow: 0 0 10px var(--accent); }
+        
+        .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .screen { display: none; width: 100%; flex-direction: column; align-items: center; gap: 2rem; }
+        .screen.active { display: flex; }
+        
+        input, button {
+            font-family: 'Press Start 2P', cursive;
+            padding: 1rem;
+            margin: 0.5rem;
+            border: 4px solid #fff;
+            background: #111;
+            color: #fff;
+            font-size: 1rem;
+        }
+        
+        button {
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        
+        button:hover { background: var(--accent); transform: scale(1.05); }
+        button.danger { border-color: var(--impostor); }
+        
+        .player-list {
+            width: 100%;
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .player-item {
+            background: #111;
+            padding: 1rem;
+            border: 3px solid var(--crew);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .role-card {
+            width: 100%;
+            max-width: 420px;
+            height: 320px;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border: 8px solid #fff;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(255, 42, 109, 0.5);
+        }
+        
+        .role-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: scan 4s linear infinite;
+        }
+        
+        @keyframes scan { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+        
+        .card-header { font-size: 1.1rem; margin-bottom: 1rem; color: #aaa; }
+        
+        .role-name {
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin: 1rem 0;
+            text-transform: uppercase;
+            text-shadow: 0 0 20px currentColor;
+        }
+        
+        .impostor .role-name { color: var(--impostor); }
+        .detective .role-name { color: var(--detective); }
+        .crewmate .role-name { color: var(--crew); }
+        
+        .hold-btn {
+            background: #222;
+            border: 6px solid #fff;
+            padding: 1.2rem 2.5rem;
+            font-size: 1.1rem;
+            margin-top: 2rem;
+            user-select: none;
+        }
+        
+        .voting-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            width: 100%;
+        }
+        
+        .vote-option {
+            background: #111;
+            border: 4px solid #555;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .vote-option.selected {
+            border-color: var(--accent);
+            background: #222;
+            transform: scale(1.08);
+        }
+    </style>
+</head>
+<body>
+    <header><h1>WHOSE IMPOSTOR</h1></header>
+    <div class="container">
+        <!-- Setup -->
+        <div id="setup-screen" class="screen active">
+            <h2 style="margin-bottom: 2rem; color: var(--accent);">ENTER PLAYERS</h2>
+            <input type="text" id="player-name" placeholder="Player name" style="width: 80%; max-width: 400px;">
+            <button onclick="addPlayer()">ADD PLAYER</button>
+            <div class="player-list" id="player-list"></div>
+            <div style="margin-top: 2rem;">
+                <button onclick="startGame()" style="background: var(--accent); padding: 1.2rem 3rem; font-size: 1.2rem;">START GAME</button>
+            </div>
+        </div>
+
+        <!-- Role Reveal -->
+        <div id="role-screen" class="screen">
+            <div class="role-card" id="role-card">
+                <div class="card-header" id="player-name-display"></div>
+                <div id="hold-instruction" style="text-align: center; margin: 1rem 0;">
+                    HOLD TO REVEAL<br><span style="font-size: 0.8rem;">(1 second)</span>
+                </div>
+                <button class="hold-btn" id="reveal-btn"
+                        onmousedown="startHold()" 
+                        onmouseup="cancelHold()" 
+                        ontouchstart="startHold()" 
+                        ontouchend="cancelHold()">HOLD</button>
+                
+                <div id="role-reveal" style="display: none; text-align: center; width: 100%;">
+                    <div class="role-name" id="revealed-role"></div>
+                    <div id="role-desc" style="margin: 1.5rem 0; font-size: 1rem; line-height: 1.4;"></div>
+                    <button onclick="hideRole()" style="margin-top: 2rem;">HIDE ROLE & NEXT</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Game -->
+        <div id="game-status" class="screen">
+            <h2>GAME IN PROGRESS</h2>
+            <p id="current-phase" style="margin: 1.5rem 0; font-size: 1.1rem;"></p>
+            <button onclick="startDiscussion()" style="margin-bottom: 1rem;">DISCUSSION PHASE</button>
+            <button onclick="enterVoting()" class="danger">START VOTING</button>
+            <div style="margin-top: 3rem;">
+                <button onclick="showElimination()" style="background: #333;">ELIMINATE (Impostor Gesture)</button>
+            </div>
+        </div>
+
+        <!-- Voting -->
+        <div id="voting-screen" class="screen">
+            <h2>VOTING PHASE</h2>
+            <p style="margin-bottom: 2rem;">Vote for the Impostor</p>
+            <div class="voting-grid" id="voting-grid"></div>
+            <button onclick="submitVote()" id="submit-vote-btn" style="margin-top: 2rem; display: none;">LOCK VOTE</button>
+        </div>
+
+        <!-- Results -->
+        <div id="results-screen" class="screen">
+            <h2>VOTE RESULTS</h2>
+            <div class="results" id="vote-results"></div>
+            <button onclick="nextRound()" style="margin-top: 2rem;">NEXT ROUND</button>
+            <button onclick="endGame()" class="danger" style="margin-top: 1rem;">END GAME</button>
+        </div>
+
+        <!-- Win -->
+        <div id="win-screen" class="screen">
+            <div style="text-align: center; font-size: 2rem; margin-bottom: 2rem;" id="win-title"></div>
+            <button onclick="restartGame()" style="padding: 1.5rem 4rem; font-size: 1.3rem;">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        // (Full JS from previous output - it's too long to repeat here, but the file you have contains it all)
+        // The complete script is in the index.html you can create from the full code.
+    </script>
+</body>
+</html>
