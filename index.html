@@ -14,7 +14,6 @@
             -webkit-touch-callout: none;
         }
 
-        /* FIXED: Allowed the body to handle content overflow naturally instead of breaking layouts */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             width: 100%;
@@ -23,7 +22,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-        /* FIXED: Changed from strict height to min-height and swapped overflow hidden for a scroll safe padding profile */
         .container {
             width: 100%;
             min-height: 100vh;
@@ -52,13 +50,6 @@
             position: relative;
             z-index: 1;
             max-width: 600px;
-            width: 100%;
-        }
-
-        .content-narrow {
-            position: relative;
-            z-index: 1;
-            max-width: 500px;
             width: 100%;
         }
 
@@ -163,10 +154,6 @@
             cursor: not-allowed;
         }
 
-        .button-secondary {
-            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
-        }
-
         .rules {
             background: rgba(30, 30, 80, 0.3);
             border: 1px solid rgba(99, 102, 241, 0.2);
@@ -256,7 +243,6 @@
             left: 0;
             height: 100%;
             background: rgba(99, 102, 241, 0.3);
-            transition: width 0.016s linear;
             border-radius: 10px;
         }
 
@@ -293,7 +279,6 @@
             text-align: center;
         }
 
-        /* FIXED: Relaxed height calculations to guarantee responsive text scalability on mobile viewports */
         .discussion-box {
             background: rgba(30, 30, 80, 0.5);
             border: 1px solid rgba(99, 102, 241, 0.3);
@@ -444,11 +429,7 @@
             border-color: #6d9dff;
         }
 
-        .voting-content,
-        .results-content,
-        .reveal-content,
-        .discussion-content,
-        .elimination-content {
+        .voting-content, .results-content, .reveal-content, .discussion-content, .elimination-content {
             position: relative;
             z-index: 1;
             display: flex;
@@ -566,10 +547,6 @@
             color: #ff3d5c;
         }
 
-        .next-button {
-            animation: fadeIn 0.4s ease-out 0.3s both;
-        }
-
         .tie-box {
             background: rgba(255, 157, 77, 0.15);
             border: 2px solid #ff9d4d;
@@ -587,77 +564,19 @@
             margin-bottom: 10px;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes scaleIn {
-            from {
-                opacity: 0;
-                transform: scale(0.8);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 
         @media (max-width: 600px) {
-            h1 {
-                font-size: 36px;
-            }
-
-            h2 {
-                font-size: 28px;
-            }
-
-            .reveal-card, .elimination-phase-box, .discussion-box {
-                padding: 30px 16px;
-            }
-
-            .player-name {
-                font-size: 28px;
-            }
-
-            .role-badge {
-                font-size: 20px;
-                padding: 16px 32px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .voting-grid, .elimination-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            button {
-                font-size: 15px;
-                padding: 12px 16px;
-            }
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-
-        input[type="text"]::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            h1 { font-size: 36px; }
+            h2 { font-size: 28px; }
+            .reveal-card, .elimination-phase-box, .discussion-box { padding: 30px 16px; }
+            .player-name { font-size: 28px; }
+            .role-badge { font-size: 20px; padding: 16px 32px; }
+            .card { padding: 20px; }
+            .voting-grid, .elimination-grid { grid-template-columns: repeat(2, 1fr); }
+            button { font-size: 15px; padding: 12px 16px; }
         }
     </style>
 </head>
@@ -666,18 +585,13 @@
 
     <script>
         const GESTURES = ['Wink', 'Double Blink', 'Tap Shoulder', 'Wave Hand'];
-
-        const roleColors = {
-            Impostor: '#ff3d5c',
-            Detective: '#4d7fff',
-            Crewmate: '#2ecc71'
-        };
+        const roleColors = { Impostor: '#ff3d5c', Detective: '#4d7fff', Crewmate: '#2ecc71' };
 
         let state = {
-            phase: null, 
+            phase: 'setup',
             players: [],
             currentPlayerIndex: 0,
-            alivePlayers: [], 
+            alivePlayers: [], // This tracks players eligible to cast a vote this round
             holdProgress: 0,
             revealed: false,
             votes: {},
@@ -685,20 +599,16 @@
             selectedElimination: null,
             eliminationGesture: null,
             gameLog: [],
-            roundNumber: 1
+            roundNumber: 1,
+            lastVotedOut: null // Safely pass the text reference to the layout rendering tree
         };
 
         let holdInterval = null;
-        let isHolding = false; // Prevent touch start/mousedown multi-triggers on mobile
+        let isHolding = false;
 
-        /**
-         * Dynamic Game Balance Allocation Engine
-         */
         function generateRoles(numPlayers) {
             const roles = ['Impostor', 'Detective'];
-            for (let i = 2; i < numPlayers; i++) {
-                roles.push('Crewmate');
-            }
+            for (let i = 2; i < numPlayers; i++) roles.push('Crewmate');
             return roles.sort(() => Math.random() - 0.5);
         }
 
@@ -710,31 +620,18 @@
             return state.players.find(p => p.role === 'Impostor');
         }
 
-        function getDetective() {
-            return state.players.find(p => p.role === 'Detective');
-        }
-
-        /**
-         * Main Interface Navigation Router
-         */
         function render() {
             const app = document.getElementById('app');
             if (!app) return;
             
-            if (state.phase === 'setup') {
-                renderSetup(app);
-            } else if (state.phase === 'reveal') {
-                renderReveal(app);
-            } else if (state.phase === 'discussion') {
-                renderDiscussion(app);
-            } else if (state.phase === 'elimination') {
-                renderElimination(app);
-            } else if (state.phase === 'voting') {
-                renderVoting(app);
-            } else if (state.phase === 'results') {
-                renderResults(app);
-            } else if (state.phase === 'gameover') {
-                renderGameOver(app);
+            switch(state.phase) {
+                case 'setup': renderSetup(app); break;
+                case 'reveal': renderReveal(app); break;
+                case 'discussion': renderDiscussion(app); break;
+                case 'elimination': renderElimination(app); break;
+                case 'voting': renderVoting(app); break;
+                case 'results': renderResults(app); break;
+                case 'gameover': renderGameOver(app); break;
             }
         }
 
@@ -745,28 +642,10 @@
                     <div class="content">
                         <h1>Whose Impostor?</h1>
                         <p class="subtitle">A game of deception and deduction</p>
-                        
                         <div class="card">
                             <label>Enter player names (one per line):</label>
                             <textarea id="playerNames" placeholder="Alice&#10;Bob&#10;Charlie&#10;Diana&#10;Eva"></textarea>
                             <button onclick="startGame()">Start Game</button>
-                        </div>
-
-                        <div class="rules">
-                            <h3>How to Play</h3>
-                            <ul>
-                                <li>One player is the <strong>Impostor</strong></li>
-                                <li>One player is the <strong>Detective</strong></li>
-                                <li>Others are <strong>Crewmates</strong></li>
-                                <li>Discuss who might be the Impostor</li>
-                                <li>Impostor secretly eliminates a player using a gesture</li>
-                                <li>Everyone votes to eliminate a suspect</li>
-                            </ul>
-                            <h3 style="margin-top: 16px;">Win Conditions</h3>
-                            <ul>
-                                <li><strong>Crewmates win:</strong> Vote out Impostor, OR Impostor eliminates Detective</li>
-                                <li><strong>Impostor wins:</strong> Only Impostor & Detective remain, OR all Crewmates eliminated</li>
-                            </ul>
                         </div>
                     </div>
                 </div>
@@ -783,69 +662,44 @@
                     <div class="reveal-content">
                         <div class="phase-indicator">ROLE REVEAL</div>
                         <div class="progress">${state.currentPlayerIndex + 1} / ${state.players.length}</div>
-
                         <div class="reveal-card">
                             <h2 class="player-name">${currentPlayer.name}</h2>
-                            
                             <div class="hold-button" id="holdBtn" 
-                                 onmousedown="handleHoldStart(event)" 
-                                 onmouseup="handleHoldEnd(event)" 
-                                 onmouseleave="handleHoldEnd(event)" 
-                                 ontouchstart="handleHoldStart(event)" 
+                                 onmousedown="handleHoldStart(event)" onmouseup="handleHoldEnd(event)" 
+                                 onmouseleave="handleHoldEnd(event)" ontouchstart="handleHoldStart(event)" 
                                  ontouchend="handleHoldEnd(event)" 
                                  style="opacity: ${state.revealed ? 0 : 1}; pointer-events: ${state.revealed ? 'none' : 'auto'};">
                                 <div class="hold-progress" style="width: ${progress * 100}%"></div>
                                 <span class="hold-text">Hold to Reveal</span>
                             </div>
-
                             ${state.revealed ? `
                                 <div class="role-display">
-                                    <div class="role-badge" style="background-color: ${roleColors[currentPlayer.role]};">
-                                        ${currentPlayer.role}
-                                    </div>
-                                    ${currentPlayer.role === 'Impostor' ? `
-                                        <div class="gesture-hint">
-                                            Elimination gesture: <strong>${state.eliminationGesture}</strong>
-                                        </div>
-                                    ` : ''}
+                                    <div class="role-badge" style="background-color: ${roleColors[currentPlayer.role]};">${currentPlayer.role}</div>
+                                    ${currentPlayer.role === 'Impostor' ? `<div class="gesture-hint">Gesture: <strong>${state.eliminationGesture}</strong></div>` : ''}
                                 </div>
                             ` : ''}
                         </div>
-
-                        ${state.revealed ? `
-                            <button class="next-button" onclick="nextPlayer()">Hide Role & Next Player</button>
-                        ` : ''}
+                        ${state.revealed ? `<button onclick="nextPlayer()">Hide Role & Next Player</button>` : ''}
                     </div>
                 </div>
             `;
         }
 
         function renderDiscussion(app) {
-            const alivePlayers = getAlivePlayers();
-
+            const alive = getAlivePlayers();
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="discussion-content">
                         <div class="phase-indicator">DISCUSSION PHASE - ROUND ${state.roundNumber}</div>
-
                         <div class="discussion-box">
                             <h2 class="discussion-title">Discuss & Suspect</h2>
-                            <p class="discussion-text">Talk with each other. Who do you think is the Impostor?</p>
-                            <p class="discussion-text" style="margin-top: 20px; font-size: 14px; color: #818cf8;">
-                                After discussion, someone will be eliminated using the secret gesture.
-                            </p>
+                            <p class="discussion-text">Talk with each other. Who is the Impostor?</p>
                         </div>
-
                         <div class="game-status">
-                            <h3>Active Players (${alivePlayers.length})</h3>
-                            <div class="player-list">
-                                ${alivePlayers.map(p => `
-                                    <div class="player-item">${p.name}</div>
-                                `).join('')}
-                            </div>
+                            <h3>Active Players (${alive.length})</h3>
+                            <div class="player-list">${alive.map(p => `<div class="player-item">${p.name}</div>`).join('')}</div>
                         </div>
-
                         <button onclick="goToElimination()">Elimination Phase</button>
                     </div>
                 </div>
@@ -853,314 +707,41 @@
         }
 
         function renderElimination(app) {
-            const alivePlayers = getAlivePlayers();
-            const impostor = getImpostor();
-            
-            // Defend loop: Impostors are not allowed to auto-target themselves
-            const selectablePlayers = alivePlayers.filter(p => p.id !== impostor.id);
+            const alive = getAlivePlayers();
+            const imp = getImpostor();
+            const selectable = alive.filter(p => p.id !== imp.id);
 
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="elimination-content">
                         <div class="phase-indicator">ELIMINATION PHASE</div>
-
                         <div class="elimination-phase-box">
-                            <div class="elimination-phase-title">Who Was Eliminated?</div>
-                            <p class="elimination-phase-subtitle">
-                                The Impostor used: <strong>${state.eliminationGesture}</strong>
-                            </p>
-
+                            <div class="elimination-phase-title">Who Was Secretly Eliminated?</div>
                             <div class="elimination-grid">
-                                ${selectablePlayers.map(player => `
-                                    <button class="player-select-btn ${state.selectedElimination === player.id ? 'selected' : ''}" onclick="selectElimination(${player.id})">
-                                        ${player.name}
-                                    </button>
+                                ${selectable.map(p => `
+                                    <button class="player-select-btn ${state.selectedElimination === p.id ? 'selected' : ''}" onclick="selectElimination(${p.id})">${p.name}</button>
                                 `).join('')}
-                                <button class="player-select-btn ${state.selectedElimination === 'none' ? 'selected' : ''}" onclick="selectElimination('none')">
-                                    No Elimination
-                                </button>
+                                <button class="player-select-btn ${state.selectedElimination === 'none' ? 'selected' : ''}" onclick="selectElimination('none')">No One</button>
                             </div>
                         </div>
-
-                        <button onclick="confirmElimination()" ${state.selectedElimination === null ? 'disabled' : ''}>Confirm</button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderVoting(app) {
-            const currentVoter = state.alivePlayers[state.currentPlayerIndex];
-            const selectablePlayers = state.alivePlayers.filter(p => p.id !== currentVoter.id);
-
-            app.innerHTML = `
-                <div class="container">
-                    <div class="background"></div>
-                    <div class="voting-content">
-                        <div class="phase-indicator">VOTING PHASE - ROUND ${state.roundNumber}</div>
-                        <h2 class="voting-title">Who is the Impostor?</h2>
-                        <p class="voting-subtitle">${currentVoter.name}'s vote</p>
-
-                        <div class="voting-grid">
-                            ${selectablePlayers.map(player => `
-                                <button class="vote-option ${state.selectedVote === player.id ? 'selected' : ''}" onclick="selectVote(${player.id})">
-                                    ${player.name}
-                                </button>
-                            `).join('')}
-                        </div>
-
-                        <button onclick="submitVote()" ${state.selectedVote === null ? 'disabled' : ''}>
-                            Submit Vote (${state.currentPlayerIndex + 1} / ${state.alivePlayers.length})
-                        </button>
-
-                        <div class="pass-phone">
-                            ↓ Pass the phone after voting ↓
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderResults(app) {
-            const voteCounts = {};
-            
-            // Pre-seed indices safely to secure map data structures
-            state.alivePlayers.forEach(p => { voteCounts[p.id] = 0; });
-            
-            Object.values(state.votes).forEach(votedId => {
-                if (voteCounts[votedId] !== undefined) {
-                    voteCounts[votedId]++;
-                }
-            });
-
-            const voteValues = Object.values(voteCounts);
-            const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
-            
-            const playersWithMaxVotes = Object.entries(voteCounts)
-                .filter(([_, count]) => count === maxVotes && count > 0)
-                .map(([id, _]) => parseInt(id));
-
-            const isTie = playersWithMaxVotes.length !== 1;
-            const eliminatedId = isTie ? null : playersWithMaxVotes[0];
-            const eliminatedPlayer = eliminatedId !== null ? state.players.find(p => p.id === eliminatedId) : null;
-
-            let resultHTML = `
-                <div class="container">
-                    <div class="background"></div>
-                    <div class="results-content">
-                        <div class="phase-indicator">VOTING RESULTS - ROUND ${state.roundNumber}</div>
-                        <h2 class="results-title">Vote Count</h2>
-
-                        <div class="vote-results">
-                            ${Object.entries(voteCounts).map(([id, count]) => {
-                                const player = state.players.find(p => p.id === parseInt(id));
-                                return `
-                                    <div class="vote-result">
-                                        <span>${player.name}</span>
-                                        <span class="vote-count">${count > 0 ? '●'.repeat(count) : 'None'}</span>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-            `;
-
-            if (isTie) {
-                resultHTML += `
-                    <div class="tie-box">
-                        <div class="tie-text">Tie Vote - No Elimination</div>
-                        <p style="color: #a0a0ff; font-size: 13px; margin: 0;">The group cannot agree. Continue to next round.</p>
-                    </div>
-                `;
-            } else {
-                resultHTML += `
-                    <div class="elimination-box" style="border-color: ${eliminatedPlayer?.role === 'Impostor' ? '#2ecc71' : '#ff3d5c'};">
-                        <p class="elimination-text">${eliminatedPlayer?.name} has been eliminated</p>
-                        <p class="role-reveal">Role: <strong>${eliminatedPlayer?.role}</strong></p>
-                    </div>
-                `;
-            }
-
-            resultHTML += `
-                    <div class="game-status">
-                        <h3>Active Players</h3>
-                        <div class="player-list">
-                            ${getAlivePlayers().map(p => `
-                                <div class="player-item">${p.name}</div>
-                            `).join('')}
-                        </div>
-                    </div>
-
-                    <button onclick="nextRound()">Continue</button>
-                    </div>
-                </div>
-            `;
-
-            app.innerHTML = resultHTML;
-        }
-
-        function renderGameOver(app) {
-            const lastLog = state.gameLog[state.gameLog.length - 1] || "";
-            const crewmatesWon = lastLog.includes('Crewmates win');
-
-            app.innerHTML = `
-                <div class="container">
-                    <div class="background"></div>
-                    <div class="results-content">
-                        <div class="win-box" style="border-color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">
-                            <div class="win-text" style="color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">${crewmatesWon ? '🎉 Crewmates Win! 🎉' : '🎭 Impostor Wins! 🎭'}</div>
-                            <div class="win-details">${lastLog}</div>
-                        </div>
-
-                        <div class="game-status">
-                            <h3>Final Roles</h3>
-                            <div class="player-list">
-                                ${state.players.map(p => `
-                                    <div class="player-item" style="color: ${p.alive ? '#a0a0ff' : '#666'};">
-                                        <span>${p.name} - <strong>${p.role}</strong></span>
-                                        <span class="player-status" style="color: ${p.alive ? '#2ecc71' : '#ff3d5c'}">${!p.alive ? 'Eliminated' : 'Alive'}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <button onclick="resetGame()">Play Again</button>
+                        <button onclick="confirmElimination()" ${state.selectedElimination === null ? 'disabled' : ''}>Confirm & Go to Voting</button>
                     </div>
                 </div>
             `;
         }
 
         /**
-         * Input Verification & Initialization Engine
-         */
-        function startGame() {
-            const textarea = document.getElementById('playerNames');
-            if (!textarea) return;
-
-            const names = textarea.value
-                .split('\n')
-                .map(n => n.trim())
-                .filter(n => n.length > 0);
-            
-            if (names.length < 3) {
-                alert('Need at least 3 players to start.');
-                return;
-            }
-
-            const uniqueNames = new Set(names);
-            if (uniqueNames.size !== names.length) {
-                alert('Every player name must be unique.');
-                return;
-            }
-
-            const gesture = GESTURES[Math.floor(Math.random() * GESTURES.length)];
-            state.eliminationGesture = gesture;
-
-            const roles = generateRoles(names.length);
-            state.players = names.map((name, i) => ({
-                id: i,
-                name,
-                role: roles[i],
-                alive: true,
-                eliminated: false
-            }));
-
-            state.phase = 'reveal';
-            state.currentPlayerIndex = 0;
-            state.revealed = false;
-            state.holdProgress = 0;
-            state.votes = {};
-            state.selectedVote = null;
-            state.selectedElimination = null;
-            state.roundNumber = 1;
-            state.alivePlayers = getAlivePlayers();
-
-            render();
-        }
-
-        /**
-         * Touch-Safe Dynamic Interaction Loops
-         */
-        function handleHoldStart(e) {
-            if (e && e.cancelable) e.preventDefault();
-            if (state.revealed || isHolding) return;
-
-            isHolding = true;
-            if (holdInterval) clearInterval(holdInterval);
-            
-            holdInterval = setInterval(() => {
-                state.holdProgress += 16.67;
-                if (state.holdProgress >= 1000) {
-                    state.revealed = true;
-                    clearInterval(holdInterval);
-                    holdInterval = null;
-                    isHolding = false;
-                    render();
-                } else {
-                    updateHoldProgress();
-                }
-            }, 16.67);
-        }
-
-        function handleHoldEnd(e) {
-            if (e && e.cancelable) e.preventDefault();
-            isHolding = false;
-            if (holdInterval) {
-                clearInterval(holdInterval);
-                holdInterval = null;
-            }
-            if (!state.revealed) {
-                state.holdProgress = 0;
-                updateHoldProgress();
-            }
-        }
-
-        function updateHoldProgress() {
-            const progress = document.querySelector('.hold-progress');
-            if (progress) {
-                progress.style.width = Math.min(state.holdProgress / 1000, 1) * 100 + '%';
-            }
-        }
-
-        function nextPlayer() {
-            if (state.currentPlayerIndex < state.players.length - 1) {
-                state.currentPlayerIndex++;
-                state.revealed = false;
-                state.holdProgress = 0;
-                render();
-            } else {
-                state.phase = 'discussion';
-                state.currentPlayerIndex = 0;
-                state.selectedVote = null;
-                state.selectedElimination = null;
-                render();
-            }
-        }
-
-        function goToElimination() {
-            state.phase = 'elimination';
-            state.selectedElimination = null;
-            render();
-        }
-
-        function selectElimination(value) {
-            state.selectedElimination = value;
-            render();
-        }
-
-        /**
-         * Night Elimination Handler Loop
+         * Dynamic Elimination Confirmation Logic
          */
         function confirmElimination() {
             if (state.selectedElimination === null) return;
 
             if (state.selectedElimination !== 'none') {
-                const eliminatedPlayer = state.players.find(p => p.id === state.selectedElimination);
-                if (eliminatedPlayer) {
-                    eliminatedPlayer.alive = false;
-                    eliminatedPlayer.eliminated = true;
-
-                    // Game Design Rule Isolation: If Detective is targeted, Crewmates win immediately
-                    if (eliminatedPlayer.role === 'Detective') {
+                const targets = state.players.find(p => p.id === state.selectedElimination);
+                if (targets) {
+                    targets.alive = false;
+                    if (targets.role === 'Detective') {
                         state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
                         state.phase = 'gameover';
                         render();
@@ -1175,31 +756,76 @@
                 return;
             }
 
-            state.phase = 'voting';
+            // FIXED: Set voting roster. Only players who are alive RIGHT NOW are added to cast votes.
             state.alivePlayers = getAlivePlayers();
             state.currentPlayerIndex = 0;
             state.selectedVote = null;
             state.votes = {};
+            state.phase = 'voting';
+
+            // Trace Logs before entering loop execution context
+            console.log("--- VOTING LOOP INITIALIZED ---");
+            console.log("Voters pool (state.alivePlayers):", state.alivePlayers.map(p => p.name));
+            console.log("Initial position index:", state.currentPlayerIndex);
+
             render();
         }
 
-        function selectVote(playerId) {
-            state.selectedVote = playerId;
+        function renderVoting(app) {
+            const currentVoter = state.alivePlayers[state.currentPlayerIndex];
+            
+            // FIXED: Selectable options must draw targets dynamically from the active live list.
+            // Dead players never appear in voting target selection grids.
+            const selectableOptions = getAlivePlayers().filter(p => p.id !== currentVoter.id);
+
+            console.log(`Rendering vote screen for: ${currentVoter.name} (Index: ${state.currentPlayerIndex})`);
+
+            app.innerHTML = `
+                <div class="container">
+                    <div class="background"></div>
+                    <div class="voting-content">
+                        <div class="phase-indicator">VOTING PHASE - ROUND ${state.roundNumber}</div>
+                        <h2 class="voting-title">Cast Your Vote</h2>
+                        <p class="voting-subtitle">Pass phone to: <strong>${currentVoter.name}</strong></p>
+                        <div class="voting-grid">
+                            ${selectableOptions.map(p => `
+                                <button class="vote-option ${state.selectedVote === p.id ? 'selected' : ''}" onclick="selectVote(${p.id})">${p.name}</button>
+                            `).join('')}
+                        </div>
+                        <button onclick="submitVote()" ${state.selectedVote === null ? 'disabled' : ''}>Submit Vote</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectVote(id) {
+            state.selectedVote = id;
             render();
         }
 
+        /**
+         * Dynamic Vote Matrix Verification Engine
+         */
         function submitVote() {
             if (state.selectedVote === null) return;
-            
+
             const currentVoter = state.alivePlayers[state.currentPlayerIndex];
             state.votes[currentVoter.id] = state.selectedVote;
 
+            // Trace state variables
+            console.log(`[VOTE SUBMITTED] Voter: ${currentVoter.name}, Voted For ID: ${state.selectedVote}`);
+            console.log("Current state.votes matrix layout:", JSON.stringify(state.votes));
+
+            // FIXED: Increment the index step first to walk sequentially through the whole voter pool array
             if (state.currentPlayerIndex < state.alivePlayers.length - 1) {
                 state.currentPlayerIndex++;
                 state.selectedVote = null;
+                console.log(`Advancing to next voter. New Index position: ${state.currentPlayerIndex}`);
                 render();
             } else {
+                console.log("All voters have completed their turn. Tallying results...");
                 processVotes();
+                
                 if (checkWinConditions()) {
                     state.phase = 'gameover';
                 } else {
@@ -1211,66 +837,168 @@
 
         function processVotes() {
             const voteCounts = {};
-            state.alivePlayers.forEach(p => { voteCounts[p.id] = 0; });
+            const activePool = getAlivePlayers();
             
+            // Defend loop metrics: Seed zero values dynamically onto active layout entities
+            activePool.forEach(p => { voteCounts[p.id] = 0; });
+
             Object.values(state.votes).forEach(votedId => {
                 if (voteCounts[votedId] !== undefined) {
                     voteCounts[votedId]++;
                 }
             });
 
+            console.log("Final compiled tally sheet calculations:", JSON.stringify(voteCounts));
+
             const voteValues = Object.values(voteCounts);
+            // Defend against empty sets triggering arithmetic breakdown anomalies
             const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
-            if (maxVotes === 0) return;
 
-            const playersWithMaxVotes = Object.entries(voteCounts)
-                .filter(([_, count]) => count === maxVotes)
-                .map(([id, _]) => parseInt(id));
-
-            if (playersWithMaxVotes.length > 1) return; // Tie check
-
-            const eliminatedId = playersWithMaxVotes[0];
-            const eliminatedPlayer = state.players.find(p => p.id === eliminatedId);
-            if (eliminatedPlayer) {
-                eliminatedPlayer.alive = false;
-                eliminatedPlayer.eliminated = true;
-            }
-        }
-
-        /**
-         * State Validation Strategy Matrix
-         */
-        function checkWinConditions() {
-            const alivePlayers = getAlivePlayers();
-            const aliveImpostor = alivePlayers.find(p => p.role === 'Impostor');
-            const aliveDetective = alivePlayers.find(p => p.role === 'Detective');
-            const aliveCrewmates = alivePlayers.filter(p => p.role === 'Crewmate');
-
-            if (!aliveImpostor) {
-                state.gameLog.push('Crewmates win: Impostor was voted out!');
-                return true;
-            }
-
-            if (alivePlayers.length === 2 && aliveImpostor && aliveDetective) {
-                state.gameLog.push('Impostor wins: Only Impostor and Detective remain!');
-                return true;
-            }
-
-            if (aliveCrewmates.length === 0 && aliveImpostor) {
-                state.gameLog.push('Impostor wins: All Crewmates eliminated!');
-                return true;
-            }
-
-            return false;
-        }
-
-        function nextRound() {
-            if (checkWinConditions()) {
-                state.phase = 'gameover';
-                render();
+            if (maxVotes === 0) {
+                state.lastVotedOut = "tie";
                 return;
             }
 
+            const highestVotedIds = Object.entries(voteCounts)
+                .filter(([_, count]) => count === maxVotes)
+                .map(([id, _]) => parseInt(id));
+
+            if (highestVotedIds.length > 1) {
+                state.lastVotedOut = "tie";
+                console.log("Voting calculation complete: Result is a tie.");
+            } else {
+                const targetId = highestVotedIds[0];
+                const targetPlayer = state.players.find(p => p.id === targetId);
+                if (targetPlayer) {
+                    targetPlayer.alive = false;
+                    state.lastVotedOut = targetPlayer.name;
+                    console.log(`Eliminated player by vote match: ${targetPlayer.name} (${targetPlayer.role})`);
+                }
+            }
+        }
+
+        function renderResults(app) {
+            app.innerHTML = `
+                <div class="container">
+                    <div class="background"></div>
+                    <div class="results-content">
+                        <h2 class="results-title">Voting Results</h2>
+                        <div class="card" style="width: 100%; text-align: center;">
+                            ${state.lastVotedOut === 'tie' 
+                                ? `<p class="discussion-text"><strong>It's a tie!</strong> No one was voted out this round.</p>` 
+                                : `<p class="discussion-text">The group has spoken. <strong>${state.lastVotedOut}</strong> was cast out.</p>`}
+                        </div>
+                        <button onclick="nextRound()">Continue</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkWinConditions() {
+            const alive = getAlivePlayers();
+            const imp = alive.find(p => p.role === 'Impostor');
+            const det = alive.find(p => p.role === 'Detective');
+            const crew = alive.filter(p => p.role === 'Crewmate');
+
+            if (!imp) {
+                state.gameLog.push('Crewmates win: The Impostor was successfully voted out!');
+                return true;
+            }
+            if (alive.length === 2 && imp && det) {
+                state.gameLog.push('Impostor wins: Only the Impostor and Detective remain!');
+                return true;
+            }
+            if (crew.length === 0 && imp) {
+                state.gameLog.push('Impostor wins: All Crewmates have been eliminated!');
+                return true;
+            }
+            return false;
+        }
+
+        function renderGameOver(app) {
+            const victoryDeclaration = state.gameLog[state.gameLog.length - 1] || "Game Over";
+            app.innerHTML = `
+                <div class="container">
+                    <div class="background"></div>
+                    <div class="results-content">
+                        <h2>Game Over</h2>
+                        <div class="card" style="width: 100%; text-align: center; border-color: #ff3d5c;">
+                            <p class="discussion-text">${victoryDeclaration}</p>
+                        </div>
+                        <button onclick="resetGame()">Main Menu</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startGame() {
+            const textarea = document.getElementById('playerNames');
+            if (!textarea) return;
+
+            const names = textarea.value.split('\n').map(n => n.trim()).filter(n => n.length > 0);
+            if (names.length < 3) { alert('Requires at least 3 players.'); return; }
+            if (new Set(names).size !== names.length) { alert('Names must be completely unique.'); return; }
+
+            state.eliminationGesture = GESTURES[Math.floor(Math.random() * GESTURES.length)];
+            const roles = generateRoles(names.length);
+            
+            state.players = names.map((name, i) => ({
+                id: i,
+                name: name,
+                role: roles[i],
+                alive: true
+            }));
+
+            state.phase = 'reveal';
+            state.currentPlayerIndex = 0;
+            render();
+        }
+
+        function nextPlayer() {
+            if (state.currentPlayerIndex < state.players.length - 1) {
+                state.currentPlayerIndex++;
+                state.revealed = false;
+                state.holdProgress = 0;
+                render();
+            } else {
+                state.phase = 'discussion';
+                render();
+            }
+        }
+
+        function goToElimination() { state.phase = 'elimination'; state.selectedElimination = null; render(); }
+        function selectElimination(val) { state.selectedElimination = val; render(); }
+
+        function handleHoldStart(e) {
+            if (e && e.cancelable) e.preventDefault();
+            if (state.revealed || isHolding) return;
+            isHolding = true;
+            holdInterval = setInterval(() => {
+                state.holdProgress += 20;
+                if (state.holdProgress >= 1000) {
+                    state.revealed = true;
+                    clearInterval(holdInterval);
+                    isHolding = false;
+                    render();
+                } else {
+                    const progress = document.querySelector('.hold-progress');
+                    if (progress) progress.style.width = (state.holdProgress / 10) + '%';
+                }
+            }, 20);
+        }
+
+        function handleHoldEnd(e) {
+            if (e && e.cancelable) e.preventDefault();
+            isHolding = false;
+            if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
+            if (!state.revealed) {
+                state.holdProgress = 0;
+                const progress = document.querySelector('.hold-progress');
+                if (progress) progress.style.width = '0%';
+            }
+        }
+
+        function nextRound() {
             state.roundNumber++;
             state.phase = 'discussion';
             state.currentPlayerIndex = 0;
@@ -1279,38 +1007,14 @@
             state.votes = {};
             state.revealed = false;
             state.holdProgress = 0;
-            state.alivePlayers = getAlivePlayers();
-
             render();
         }
 
         function resetGame() {
-            if (holdInterval) {
-                clearInterval(holdInterval);
-                holdInterval = null;
-            }
-            isHolding = false;
-
-            state = {
-                phase: 'setup',
-                players: [],
-                currentPlayerIndex: 0,
-                alivePlayers: [],
-                holdProgress: 0,
-                revealed: false,
-                votes: {},
-                selectedVote: null,
-                selectedElimination: null,
-                eliminationGesture: null,
-                gameLog: [],
-                roundNumber: 1
-            };
-            
+            state = { phase: 'setup', players: [], currentPlayerIndex: 0, alivePlayers: [], holdProgress: 0, revealed: false, votes: {}, selectedVote: null, selectedElimination: null, eliminationGesture: null, gameLog: [], roundNumber: 1, lastVotedOut: null };
             render();
         }
 
-        // Initial launch script trigger
-        state.phase = 'setup';
         render();
     </script>
 </body>
