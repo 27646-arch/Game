@@ -14,25 +14,27 @@
             -webkit-touch-callout: none;
         }
 
+        /* FIXED: Allowed the body to handle content overflow naturally instead of breaking layouts */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             width: 100%;
-            height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            background-color: #0a0e27;
             -webkit-font-smoothing: antialiased;
         }
 
+        /* FIXED: Changed from strict height to min-height and swapped overflow hidden for a scroll safe padding profile */
         .container {
             width: 100%;
-            height: 100vh;
+            min-height: 100vh;
             background: linear-gradient(135deg, #0a0e27 0%, #1a0f3e 50%, #0f2e5e 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #fff;
-            padding: 20px;
+            padding: 40px 20px;
             position: relative;
-            overflow: hidden;
+            overflow-y: auto;
         }
 
         .background {
@@ -50,6 +52,13 @@
             position: relative;
             z-index: 1;
             max-width: 600px;
+            width: 100%;
+        }
+
+        .content-narrow {
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
             width: 100%;
         }
 
@@ -154,6 +163,10 @@
             cursor: not-allowed;
         }
 
+        .button-secondary {
+            background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+        }
+
         .rules {
             background: rgba(30, 30, 80, 0.3);
             border: 1px solid rgba(99, 102, 241, 0.2);
@@ -162,7 +175,7 @@
             font-size: 13px;
             line-height: 1.6;
             color: #c0c0ff;
-            max-height: 220px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
@@ -243,14 +256,13 @@
             left: 0;
             height: 100%;
             background: rgba(99, 102, 241, 0.3);
+            transition: width 0.016s linear;
             border-radius: 10px;
-            pointer-events: none;
         }
 
         .hold-text {
             position: relative;
             z-index: 1;
-            pointer-events: none;
         }
 
         .role-display {
@@ -281,16 +293,17 @@
             text-align: center;
         }
 
+        /* FIXED: Relaxed height calculations to guarantee responsive text scalability on mobile viewports */
         .discussion-box {
             background: rgba(30, 30, 80, 0.5);
             border: 1px solid rgba(99, 102, 241, 0.3);
             border-radius: 16px;
-            padding: 40px;
-            margin-bottom: 40px;
+            padding: 40px 24px;
+            margin-bottom: 30px;
             width: 100%;
             box-sizing: border-box;
             backdrop-filter: blur(10px);
-            min-height: 350px;
+            min-height: 250px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -553,6 +566,10 @@
             color: #ff3d5c;
         }
 
+        .next-button {
+            animation: fadeIn 0.4s ease-out 0.3s both;
+        }
+
         .tie-box {
             background: rgba(255, 157, 77, 0.15);
             border: 2px solid #ff9d4d;
@@ -592,14 +609,55 @@
         }
 
         @media (max-width: 600px) {
-            h1 { font-size: 36px; }
-            h2 { font-size: 28px; }
-            .reveal-card, .elimination-phase-box, .discussion-box { padding: 40px 20px; }
-            .player-name { font-size: 28px; }
-            .role-badge { font-size: 20px; padding: 16px 32px; }
-            .card { padding: 20px; }
-            .voting-grid, .elimination-grid { grid-template-columns: repeat(2, 1fr); }
-            button { font-size: 15px; padding: 12px 16px; }
+            h1 {
+                font-size: 36px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            .reveal-card, .elimination-phase-box, .discussion-box {
+                padding: 30px 16px;
+            }
+
+            .player-name {
+                font-size: 28px;
+            }
+
+            .role-badge {
+                font-size: 20px;
+                padding: 16px 32px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .voting-grid, .elimination-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            button {
+                font-size: 15px;
+                padding: 12px 16px;
+            }
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -615,9 +673,8 @@
             Crewmate: '#2ecc71'
         };
 
-        // Complete baseline state architecture
         let state = {
-            phase: 'setup',
+            phase: null, 
             players: [],
             currentPlayerIndex: 0,
             alivePlayers: [], 
@@ -632,10 +689,10 @@
         };
 
         let holdInterval = null;
-        let isHolding = false; // Prevents multi-touch double-trigger cascades
+        let isHolding = false; // Prevent touch start/mousedown multi-triggers on mobile
 
         /**
-         * Standard randomized balance generation for core roles
+         * Dynamic Game Balance Allocation Engine
          */
         function generateRoles(numPlayers) {
             const roles = ['Impostor', 'Detective'];
@@ -653,21 +710,31 @@
             return state.players.find(p => p.role === 'Impostor');
         }
 
+        function getDetective() {
+            return state.players.find(p => p.role === 'Detective');
+        }
+
         /**
-         * Global View Routing Router
+         * Main Interface Navigation Router
          */
         function render() {
             const app = document.getElementById('app');
             if (!app) return;
             
-            switch(state.phase) {
-                case 'setup': renderSetup(app); break;
-                case 'reveal': renderReveal(app); break;
-                case 'discussion': renderDiscussion(app); break;
-                case 'elimination': renderElimination(app); break;
-                case 'voting': renderVoting(app); break;
-                case 'results': renderResults(app); break;
-                case 'gameover': renderGameOver(app); break;
+            if (state.phase === 'setup') {
+                renderSetup(app);
+            } else if (state.phase === 'reveal') {
+                renderReveal(app);
+            } else if (state.phase === 'discussion') {
+                renderDiscussion(app);
+            } else if (state.phase === 'elimination') {
+                renderElimination(app);
+            } else if (state.phase === 'voting') {
+                renderVoting(app);
+            } else if (state.phase === 'results') {
+                renderResults(app);
+            } else if (state.phase === 'gameover') {
+                renderGameOver(app);
             }
         }
 
@@ -680,7 +747,7 @@
                         <p class="subtitle">A game of deception and deduction</p>
                         
                         <div class="card">
-                            <label>Enter player names (one per line, unique):</label>
+                            <label>Enter player names (one per line):</label>
                             <textarea id="playerNames" placeholder="Alice&#10;Bob&#10;Charlie&#10;Diana&#10;Eva"></textarea>
                             <button onclick="startGame()">Start Game</button>
                         </div>
@@ -695,7 +762,7 @@
                                 <li>Impostor secretly eliminates a player using a gesture</li>
                                 <li>Everyone votes to eliminate a suspect</li>
                             </ul>
-                            <h3 style="margin-top: 12px;">Win Conditions</h3>
+                            <h3 style="margin-top: 16px;">Win Conditions</h3>
                             <ul>
                                 <li><strong>Crewmates win:</strong> Vote out Impostor, OR Impostor eliminates Detective</li>
                                 <li><strong>Impostor wins:</strong> Only Impostor & Detective remain, OR all Crewmates eliminated</li>
@@ -789,7 +856,7 @@
             const alivePlayers = getAlivePlayers();
             const impostor = getImpostor();
             
-            // Impostor cannot target themselves
+            // Defend loop: Impostors are not allowed to auto-target themselves
             const selectablePlayers = alivePlayers.filter(p => p.id !== impostor.id);
 
             app.innerHTML = `
@@ -824,7 +891,6 @@
 
         function renderVoting(app) {
             const currentVoter = state.alivePlayers[state.currentPlayerIndex];
-            // Dead players do not show up, nor can you target yourself
             const selectablePlayers = state.alivePlayers.filter(p => p.id !== currentVoter.id);
 
             app.innerHTML = `
@@ -858,16 +924,16 @@
         function renderResults(app) {
             const voteCounts = {};
             
-            // Populate baseline indices safely
+            // Pre-seed indices safely to secure map data structures
             state.alivePlayers.forEach(p => { voteCounts[p.id] = 0; });
+            
             Object.values(state.votes).forEach(votedId => {
-                if(voteCounts[votedId] !== undefined) {
+                if (voteCounts[votedId] !== undefined) {
                     voteCounts[votedId]++;
                 }
             });
 
             const voteValues = Object.values(voteCounts);
-            // Defend against an empty evaluation crash dynamically
             const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
             
             const playersWithMaxVotes = Object.entries(voteCounts)
@@ -941,9 +1007,7 @@
                     <div class="background"></div>
                     <div class="results-content">
                         <div class="win-box" style="border-color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">
-                            <div class="win-text" style="color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">
-                                ${crewmatesWon ? '🎉 Crewmates Win! 🎉' : '🎭 Impostor Wins! 🎭'}
-                            </div>
+                            <div class="win-text" style="color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">${crewmatesWon ? '🎉 Crewmates Win! 🎉' : '🎭 Impostor Wins! 🎭'}</div>
                             <div class="win-details">${lastLog}</div>
                         </div>
 
@@ -966,11 +1030,11 @@
         }
 
         /**
-         * Setup Validation Engine
+         * Input Verification & Initialization Engine
          */
         function startGame() {
             const textarea = document.getElementById('playerNames');
-            if(!textarea) return;
+            if (!textarea) return;
 
             const names = textarea.value
                 .split('\n')
@@ -982,7 +1046,6 @@
                 return;
             }
 
-            // Enforce strictly unique names to preserve local mapping rules
             const uniqueNames = new Set(names);
             if (uniqueNames.size !== names.length) {
                 alert('Every player name must be unique.');
@@ -1015,7 +1078,7 @@
         }
 
         /**
-         * Interactive Hold-To-Reveal Logic De-Duplicated for Hybrid Mobile/Android Browsers
+         * Touch-Safe Dynamic Interaction Loops
          */
         function handleHoldStart(e) {
             if (e && e.cancelable) e.preventDefault();
@@ -1085,7 +1148,7 @@
         }
 
         /**
-         * Process Night Elimination Phase
+         * Night Elimination Handler Loop
          */
         function confirmElimination() {
             if (state.selectedElimination === null) return;
@@ -1096,7 +1159,7 @@
                     eliminatedPlayer.alive = false;
                     eliminatedPlayer.eliminated = true;
 
-                    // Core Rule Isolation Check: If Detective is eliminated by Impostor, Crewmates immediately win.
+                    // Game Design Rule Isolation: If Detective is targeted, Crewmates win immediately
                     if (eliminatedPlayer.role === 'Detective') {
                         state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
                         state.phase = 'gameover';
@@ -1106,14 +1169,12 @@
                 }
             }
 
-            // Run Standard Evaluation loop
             if (checkWinConditions()) {
                 state.phase = 'gameover';
                 render();
                 return;
             }
 
-            // Establish voter baseline mapping ensuring only live players vote
             state.phase = 'voting';
             state.alivePlayers = getAlivePlayers();
             state.currentPlayerIndex = 0;
@@ -1138,10 +1199,7 @@
                 state.selectedVote = null;
                 render();
             } else {
-                // Last vote submitted, finalize immediately
                 processVotes();
-                
-                // Intercept win state checks right away before serving results view router
                 if (checkWinConditions()) {
                     state.phase = 'gameover';
                 } else {
@@ -1163,14 +1221,13 @@
 
             const voteValues = Object.values(voteCounts);
             const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
-            if (maxVotes === 0) return; // No votes cast
+            if (maxVotes === 0) return;
 
             const playersWithMaxVotes = Object.entries(voteCounts)
                 .filter(([_, count]) => count === maxVotes)
                 .map(([id, _]) => parseInt(id));
 
-            // If a tie occurs, skip player removal step
-            if (playersWithMaxVotes.length > 1) return;
+            if (playersWithMaxVotes.length > 1) return; // Tie check
 
             const eliminatedId = playersWithMaxVotes[0];
             const eliminatedPlayer = state.players.find(p => p.id === eliminatedId);
@@ -1181,7 +1238,7 @@
         }
 
         /**
-         * Centralized Win Condition Evaluation Matrix
+         * State Validation Strategy Matrix
          */
         function checkWinConditions() {
             const alivePlayers = getAlivePlayers();
@@ -1189,19 +1246,16 @@
             const aliveDetective = alivePlayers.find(p => p.role === 'Detective');
             const aliveCrewmates = alivePlayers.filter(p => p.role === 'Crewmate');
 
-            // 1. Impostor Voted Out Rule Check
             if (!aliveImpostor) {
                 state.gameLog.push('Crewmates win: Impostor was voted out!');
                 return true;
             }
 
-            // 2. Only Impostor and Detective Remain Rule Check
             if (alivePlayers.length === 2 && aliveImpostor && aliveDetective) {
                 state.gameLog.push('Impostor wins: Only Impostor and Detective remain!');
                 return true;
             }
 
-            // 3. All Crewmates Eliminated Rule Check
             if (aliveCrewmates.length === 0 && aliveImpostor) {
                 state.gameLog.push('Impostor wins: All Crewmates eliminated!');
                 return true;
@@ -1230,9 +1284,6 @@
             render();
         }
 
-        /**
-         * Clean Memory State Purge Engine
-         */
         function resetGame() {
             if (holdInterval) {
                 clearInterval(holdInterval);
@@ -1258,7 +1309,7 @@
             render();
         }
 
-        // Initialize App Container Thread
+        // Initial launch script trigger
         state.phase = 'setup';
         render();
     </script>
