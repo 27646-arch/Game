@@ -53,13 +53,6 @@
             width: 100%;
         }
 
-        .content-narrow {
-            position: relative;
-            z-index: 1;
-            max-width: 500px;
-            width: 100%;
-        }
-
         h1 {
             font-size: 48px;
             font-weight: 700;
@@ -144,6 +137,7 @@
             box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
             -webkit-appearance: none;
             -webkit-tap-highlight-color: transparent;
+            margin-bottom: 12px;
         }
 
         button:hover:not(:disabled) {
@@ -168,7 +162,7 @@
             font-size: 13px;
             line-height: 1.6;
             color: #c0c0ff;
-            max-height: 300px;
+            max-height: 220px;
             overflow-y: auto;
         }
 
@@ -249,13 +243,14 @@
             left: 0;
             height: 100%;
             background: rgba(99, 102, 241, 0.3);
-            transition: width 0.016s linear;
             border-radius: 10px;
+            pointer-events: none;
         }
 
         .hold-text {
             position: relative;
             z-index: 1;
+            pointer-events: none;
         }
 
         .role-display {
@@ -333,6 +328,14 @@
             color: #fff;
             margin-bottom: 20px;
             text-align: center;
+        }
+
+        .elimination-phase-subtitle {
+            font-size: 14px;
+            color: #a0a0ff;
+            text-align: center;
+            margin-bottom: 20px;
+            font-style: italic;
         }
 
         .elimination-grid {
@@ -550,10 +553,6 @@
             color: #ff3d5c;
         }
 
-        .next-button {
-            animation: fadeIn 0.4s ease-out 0.3s both;
-        }
-
         .tie-box {
             background: rgba(255, 157, 77, 0.15);
             border: 2px solid #ff9d4d;
@@ -593,59 +592,14 @@
         }
 
         @media (max-width: 600px) {
-            h1 {
-                font-size: 36px;
-            }
-
-            h2 {
-                font-size: 28px;
-            }
-
-            .reveal-card, .elimination-phase-box, .discussion-box {
-                padding: 40px 20px;
-            }
-
-            .player-name {
-                font-size: 28px;
-            }
-
-            .role-badge {
-                font-size: 20px;
-                padding: 16px 32px;
-            }
-
-            .card {
-                padding: 20px;
-            }
-
-            .voting-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .elimination-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            button {
-                font-size: 15px;
-                padding: 12px 16px;
-            }
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            font-size: 14px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-        }
-
-        input[type="text"]::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+            h1 { font-size: 36px; }
+            h2 { font-size: 28px; }
+            .reveal-card, .elimination-phase-box, .discussion-box { padding: 40px 20px; }
+            .player-name { font-size: 28px; }
+            .role-badge { font-size: 20px; padding: 16px 32px; }
+            .card { padding: 20px; }
+            .voting-grid, .elimination-grid { grid-template-columns: repeat(2, 1fr); }
+            button { font-size: 15px; padding: 12px 16px; }
         }
     </style>
 </head>
@@ -661,14 +615,14 @@
             Crewmate: '#2ecc71'
         };
 
+        // Complete baseline state architecture
         let state = {
-            screen: 'setup',
-            phase: null, // setup, reveal, discussion, elimination, voting, results, gameover
+            phase: 'setup',
             players: [],
             currentPlayerIndex: 0,
+            alivePlayers: [], 
             holdProgress: 0,
             revealed: false,
-            votingPhase: null,
             votes: {},
             selectedVote: null,
             selectedElimination: null,
@@ -678,7 +632,11 @@
         };
 
         let holdInterval = null;
+        let isHolding = false; // Prevents multi-touch double-trigger cascades
 
+        /**
+         * Standard randomized balance generation for core roles
+         */
         function generateRoles(numPlayers) {
             const roles = ['Impostor', 'Detective'];
             for (let i = 2; i < numPlayers; i++) {
@@ -687,23 +645,29 @@
             return roles.sort(() => Math.random() - 0.5);
         }
 
+        function getAlivePlayers() {
+            return state.players.filter(p => p.alive);
+        }
+
+        function getImpostor() {
+            return state.players.find(p => p.role === 'Impostor');
+        }
+
+        /**
+         * Global View Routing Router
+         */
         function render() {
             const app = document.getElementById('app');
+            if (!app) return;
             
-            if (state.phase === 'setup') {
-                renderSetup(app);
-            } else if (state.phase === 'reveal') {
-                renderReveal(app);
-            } else if (state.phase === 'discussion') {
-                renderDiscussion(app);
-            } else if (state.phase === 'elimination') {
-                renderElimination(app);
-            } else if (state.phase === 'voting') {
-                renderVoting(app);
-            } else if (state.phase === 'results') {
-                renderResults(app);
-            } else if (state.phase === 'gameover') {
-                renderGameOver(app);
+            switch(state.phase) {
+                case 'setup': renderSetup(app); break;
+                case 'reveal': renderReveal(app); break;
+                case 'discussion': renderDiscussion(app); break;
+                case 'elimination': renderElimination(app); break;
+                case 'voting': renderVoting(app); break;
+                case 'results': renderResults(app); break;
+                case 'gameover': renderGameOver(app); break;
             }
         }
 
@@ -716,7 +680,7 @@
                         <p class="subtitle">A game of deception and deduction</p>
                         
                         <div class="card">
-                            <label>Enter player names (one per line):</label>
+                            <label>Enter player names (one per line, unique):</label>
                             <textarea id="playerNames" placeholder="Alice&#10;Bob&#10;Charlie&#10;Diana&#10;Eva"></textarea>
                             <button onclick="startGame()">Start Game</button>
                         </div>
@@ -731,9 +695,9 @@
                                 <li>Impostor secretly eliminates a player using a gesture</li>
                                 <li>Everyone votes to eliminate a suspect</li>
                             </ul>
-                            <h3 style="margin-top: 16px;">Win Conditions</h3>
+                            <h3 style="margin-top: 12px;">Win Conditions</h3>
                             <ul>
-                                <li><strong>Crewmates win:</strong> Vote out the Impostor, OR Impostor eliminates Detective</li>
+                                <li><strong>Crewmates win:</strong> Vote out Impostor, OR Impostor eliminates Detective</li>
                                 <li><strong>Impostor wins:</strong> Only Impostor & Detective remain, OR all Crewmates eliminated</li>
                             </ul>
                         </div>
@@ -756,7 +720,13 @@
                         <div class="reveal-card">
                             <h2 class="player-name">${currentPlayer.name}</h2>
                             
-                            <div class="hold-button" id="holdBtn" onmousedown="handleHoldStart()" onmouseup="handleHoldEnd()" onmouseleave="handleHoldEnd()" ontouchstart="handleHoldStart()" ontouchend="handleHoldEnd()" style="opacity: ${state.revealed ? 0 : 1}; pointer-events: ${state.revealed ? 'none' : 'auto'};">
+                            <div class="hold-button" id="holdBtn" 
+                                 onmousedown="handleHoldStart(event)" 
+                                 onmouseup="handleHoldEnd(event)" 
+                                 onmouseleave="handleHoldEnd(event)" 
+                                 ontouchstart="handleHoldStart(event)" 
+                                 ontouchend="handleHoldEnd(event)" 
+                                 style="opacity: ${state.revealed ? 0 : 1}; pointer-events: ${state.revealed ? 'none' : 'auto'};">
                                 <div class="hold-progress" style="width: ${progress * 100}%"></div>
                                 <span class="hold-text">Hold to Reveal</span>
                             </div>
@@ -784,19 +754,19 @@
         }
 
         function renderDiscussion(app) {
-            const alivePlayers = state.players.filter(p => p.alive);
+            const alivePlayers = getAlivePlayers();
 
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="discussion-content">
-                        <div class="phase-indicator">DISCUSSION PHASE</div>
+                        <div class="phase-indicator">DISCUSSION PHASE - ROUND ${state.roundNumber}</div>
 
                         <div class="discussion-box">
                             <h2 class="discussion-title">Discuss & Suspect</h2>
                             <p class="discussion-text">Talk with each other. Who do you think is the Impostor?</p>
                             <p class="discussion-text" style="margin-top: 20px; font-size: 14px; color: #818cf8;">
-                                After discussion, the Impostor will eliminate someone using the secret gesture.
+                                After discussion, someone will be eliminated using the secret gesture.
                             </p>
                         </div>
 
@@ -809,14 +779,18 @@
                             </div>
                         </div>
 
-                        <button onclick="goToElimination()">Impostor Eliminate Someone</button>
+                        <button onclick="goToElimination()">Elimination Phase</button>
                     </div>
                 </div>
             `;
         }
 
         function renderElimination(app) {
-            const alivePlayers = state.players.filter(p => p.alive);
+            const alivePlayers = getAlivePlayers();
+            const impostor = getImpostor();
+            
+            // Impostor cannot target themselves
+            const selectablePlayers = alivePlayers.filter(p => p.id !== impostor.id);
 
             app.innerHTML = `
                 <div class="container">
@@ -825,43 +799,44 @@
                         <div class="phase-indicator">ELIMINATION PHASE</div>
 
                         <div class="elimination-phase-box">
-                            <div class="elimination-phase-title">Impostor: Select Target</div>
-                            <p style="text-align: center; color: #a0a0ff; font-size: 14px; margin-bottom: 20px;">
-                                Use the gesture: <strong>${state.eliminationGesture}</strong> on one player.
-                            </p>
-                            <p style="text-align: center; color: #a0a0ff; font-size: 14px; margin-bottom: 20px;">
-                                Then select who you eliminated:
+                            <div class="elimination-phase-title">Who Was Eliminated?</div>
+                            <p class="elimination-phase-subtitle">
+                                The Impostor used: <strong>${state.eliminationGesture}</strong>
                             </p>
 
                             <div class="elimination-grid">
-                                ${alivePlayers.map(player => `
+                                ${selectablePlayers.map(player => `
                                     <button class="player-select-btn ${state.selectedElimination === player.id ? 'selected' : ''}" onclick="selectElimination(${player.id})">
                                         ${player.name}
                                     </button>
                                 `).join('')}
+                                <button class="player-select-btn ${state.selectedElimination === 'none' ? 'selected' : ''}" onclick="selectElimination('none')">
+                                    No Elimination
+                                </button>
                             </div>
                         </div>
 
-                        <button onclick="confirmElimination()" ${state.selectedElimination === null ? 'disabled' : ''}>Confirm Elimination</button>
+                        <button onclick="confirmElimination()" ${state.selectedElimination === null ? 'disabled' : ''}>Confirm</button>
                     </div>
                 </div>
             `;
         }
 
         function renderVoting(app) {
-            const currentVoter = state.players[state.currentPlayerIndex];
-            const alivePlayers = state.players.filter(p => p.alive);
+            const currentVoter = state.alivePlayers[state.currentPlayerIndex];
+            // Dead players do not show up, nor can you target yourself
+            const selectablePlayers = state.alivePlayers.filter(p => p.id !== currentVoter.id);
 
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="voting-content">
-                        <div class="phase-indicator">VOTING PHASE</div>
+                        <div class="phase-indicator">VOTING PHASE - ROUND ${state.roundNumber}</div>
                         <h2 class="voting-title">Who is the Impostor?</h2>
                         <p class="voting-subtitle">${currentVoter.name}'s vote</p>
 
                         <div class="voting-grid">
-                            ${alivePlayers.map(player => `
+                            ${selectablePlayers.map(player => `
                                 <button class="vote-option ${state.selectedVote === player.id ? 'selected' : ''}" onclick="selectVote(${player.id})">
                                     ${player.name}
                                 </button>
@@ -869,7 +844,7 @@
                         </div>
 
                         <button onclick="submitVote()" ${state.selectedVote === null ? 'disabled' : ''}>
-                            Submit Vote (${state.currentPlayerIndex + 1} / ${state.players.length})
+                            Submit Vote (${state.currentPlayerIndex + 1} / ${state.alivePlayers.length})
                         </button>
 
                         <div class="pass-phone">
@@ -882,16 +857,24 @@
 
         function renderResults(app) {
             const voteCounts = {};
+            
+            // Populate baseline indices safely
+            state.alivePlayers.forEach(p => { voteCounts[p.id] = 0; });
             Object.values(state.votes).forEach(votedId => {
-                voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+                if(voteCounts[votedId] !== undefined) {
+                    voteCounts[votedId]++;
+                }
             });
 
-            const maxVotes = Math.max(...Object.values(voteCounts));
+            const voteValues = Object.values(voteCounts);
+            // Defend against an empty evaluation crash dynamically
+            const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
+            
             const playersWithMaxVotes = Object.entries(voteCounts)
-                .filter(([_, count]) => count === maxVotes)
+                .filter(([_, count]) => count === maxVotes && count > 0)
                 .map(([id, _]) => parseInt(id));
 
-            const isTie = playersWithMaxVotes.length > 1;
+            const isTie = playersWithMaxVotes.length !== 1;
             const eliminatedId = isTie ? null : playersWithMaxVotes[0];
             const eliminatedPlayer = eliminatedId !== null ? state.players.find(p => p.id === eliminatedId) : null;
 
@@ -908,7 +891,7 @@
                                 return `
                                     <div class="vote-result">
                                         <span>${player.name}</span>
-                                        <span class="vote-count">${'●'.repeat(count)}</span>
+                                        <span class="vote-count">${count > 0 ? '●'.repeat(count) : 'None'}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -935,7 +918,7 @@
                     <div class="game-status">
                         <h3>Active Players</h3>
                         <div class="player-list">
-                            ${state.players.filter(p => p.alive).map(p => `
+                            ${getAlivePlayers().map(p => `
                                 <div class="player-item">${p.name}</div>
                             `).join('')}
                         </div>
@@ -950,15 +933,18 @@
         }
 
         function renderGameOver(app) {
-            const crewmatesWon = state.gameLog[state.gameLog.length - 1]?.includes('Crewmates win');
+            const lastLog = state.gameLog[state.gameLog.length - 1] || "";
+            const crewmatesWon = lastLog.includes('Crewmates win');
 
             app.innerHTML = `
                 <div class="container">
                     <div class="background"></div>
                     <div class="results-content">
-                        <div class="win-box">
-                            <div class="win-text">${crewmatesWon ? '🎉 Crewmates Win! 🎉' : '🎭 Impostor Wins! 🎭'}</div>
-                            <div class="win-details">${state.gameLog[state.gameLog.length - 1]}</div>
+                        <div class="win-box" style="border-color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">
+                            <div class="win-text" style="color: ${crewmatesWon ? '#2ecc71' : '#ff3d5c'}">
+                                ${crewmatesWon ? '🎉 Crewmates Win! 🎉' : '🎭 Impostor Wins! 🎭'}
+                            </div>
+                            <div class="win-details">${lastLog}</div>
                         </div>
 
                         <div class="game-status">
@@ -966,8 +952,8 @@
                             <div class="player-list">
                                 ${state.players.map(p => `
                                     <div class="player-item" style="color: ${p.alive ? '#a0a0ff' : '#666'};">
-                                        <span>${p.name} - ${p.role}</span>
-                                        <span class="player-status">${!p.alive ? 'Eliminated' : 'Alive'}</span>
+                                        <span>${p.name} - <strong>${p.role}</strong></span>
+                                        <span class="player-status" style="color: ${p.alive ? '#2ecc71' : '#ff3d5c'}">${!p.alive ? 'Eliminated' : 'Alive'}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -979,15 +965,27 @@
             `;
         }
 
+        /**
+         * Setup Validation Engine
+         */
         function startGame() {
             const textarea = document.getElementById('playerNames');
+            if(!textarea) return;
+
             const names = textarea.value
                 .split('\n')
                 .map(n => n.trim())
                 .filter(n => n.length > 0);
             
             if (names.length < 3) {
-                alert('Need at least 3 players');
+                alert('Need at least 3 players to start.');
+                return;
+            }
+
+            // Enforce strictly unique names to preserve local mapping rules
+            const uniqueNames = new Set(names);
+            if (uniqueNames.size !== names.length) {
+                alert('Every player name must be unique.');
                 return;
             }
 
@@ -1011,13 +1009,19 @@
             state.selectedVote = null;
             state.selectedElimination = null;
             state.roundNumber = 1;
+            state.alivePlayers = getAlivePlayers();
 
             render();
         }
 
-        function handleHoldStart() {
-            if (state.revealed) return;
+        /**
+         * Interactive Hold-To-Reveal Logic De-Duplicated for Hybrid Mobile/Android Browsers
+         */
+        function handleHoldStart(e) {
+            if (e && e.cancelable) e.preventDefault();
+            if (state.revealed || isHolding) return;
 
+            isHolding = true;
             if (holdInterval) clearInterval(holdInterval);
             
             holdInterval = setInterval(() => {
@@ -1025,6 +1029,8 @@
                 if (state.holdProgress >= 1000) {
                     state.revealed = true;
                     clearInterval(holdInterval);
+                    holdInterval = null;
+                    isHolding = false;
                     render();
                 } else {
                     updateHoldProgress();
@@ -1032,8 +1038,17 @@
             }, 16.67);
         }
 
-        function handleHoldEnd() {
-            if (holdInterval) clearInterval(holdInterval);
+        function handleHoldEnd(e) {
+            if (e && e.cancelable) e.preventDefault();
+            isHolding = false;
+            if (holdInterval) {
+                clearInterval(holdInterval);
+                holdInterval = null;
+            }
+            if (!state.revealed) {
+                state.holdProgress = 0;
+                updateHoldProgress();
+            }
         }
 
         function updateHoldProgress() {
@@ -1064,35 +1079,43 @@
             render();
         }
 
-        function selectElimination(playerId) {
-            state.selectedElimination = playerId;
+        function selectElimination(value) {
+            state.selectedElimination = value;
             render();
         }
 
+        /**
+         * Process Night Elimination Phase
+         */
         function confirmElimination() {
             if (state.selectedElimination === null) return;
 
-            const eliminatedPlayer = state.players.find(p => p.id === state.selectedElimination);
-            eliminatedPlayer.alive = false;
-            eliminatedPlayer.eliminated = true;
+            if (state.selectedElimination !== 'none') {
+                const eliminatedPlayer = state.players.find(p => p.id === state.selectedElimination);
+                if (eliminatedPlayer) {
+                    eliminatedPlayer.alive = false;
+                    eliminatedPlayer.eliminated = true;
 
-            // Check if Detective was eliminated
-            if (eliminatedPlayer.role === 'Detective') {
-                state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
+                    // Core Rule Isolation Check: If Detective is eliminated by Impostor, Crewmates immediately win.
+                    if (eliminatedPlayer.role === 'Detective') {
+                        state.gameLog.push('Crewmates win: Detective was eliminated by Impostor!');
+                        state.phase = 'gameover';
+                        render();
+                        return;
+                    }
+                }
+            }
+
+            // Run Standard Evaluation loop
+            if (checkWinConditions()) {
                 state.phase = 'gameover';
                 render();
                 return;
             }
 
-            // Check win conditions
-            const checkWin = checkWinConditions();
-            if (checkWin) {
-                state.phase = 'gameover';
-                render();
-                return;
-            }
-
+            // Establish voter baseline mapping ensuring only live players vote
             state.phase = 'voting';
+            state.alivePlayers = getAlivePlayers();
             state.currentPlayerIndex = 0;
             state.selectedVote = null;
             state.votes = {};
@@ -1107,68 +1130,80 @@
         function submitVote() {
             if (state.selectedVote === null) return;
             
-            state.votes[state.players[state.currentPlayerIndex].id] = state.selectedVote;
+            const currentVoter = state.alivePlayers[state.currentPlayerIndex];
+            state.votes[currentVoter.id] = state.selectedVote;
 
-            if (state.currentPlayerIndex < state.players.length - 1) {
+            if (state.currentPlayerIndex < state.alivePlayers.length - 1) {
                 state.currentPlayerIndex++;
                 state.selectedVote = null;
                 render();
             } else {
+                // Last vote submitted, finalize immediately
                 processVotes();
-                state.phase = 'results';
+                
+                // Intercept win state checks right away before serving results view router
+                if (checkWinConditions()) {
+                    state.phase = 'gameover';
+                } else {
+                    state.phase = 'results';
+                }
                 render();
             }
         }
 
         function processVotes() {
             const voteCounts = {};
+            state.alivePlayers.forEach(p => { voteCounts[p.id] = 0; });
+            
             Object.values(state.votes).forEach(votedId => {
-                voteCounts[votedId] = (voteCounts[votedId] || 0) + 1;
+                if (voteCounts[votedId] !== undefined) {
+                    voteCounts[votedId]++;
+                }
             });
 
-            const maxVotes = Math.max(...Object.values(voteCounts));
+            const voteValues = Object.values(voteCounts);
+            const maxVotes = voteValues.length > 0 ? Math.max(...voteValues) : 0;
+            if (maxVotes === 0) return; // No votes cast
+
             const playersWithMaxVotes = Object.entries(voteCounts)
                 .filter(([_, count]) => count === maxVotes)
                 .map(([id, _]) => parseInt(id));
 
-            if (playersWithMaxVotes.length > 1) {
-                return; // Tie, nobody eliminated
-            }
+            // If a tie occurs, skip player removal step
+            if (playersWithMaxVotes.length > 1) return;
 
             const eliminatedId = playersWithMaxVotes[0];
             const eliminatedPlayer = state.players.find(p => p.id === eliminatedId);
-
-            eliminatedPlayer.alive = false;
-            eliminatedPlayer.eliminated = true;
+            if (eliminatedPlayer) {
+                eliminatedPlayer.alive = false;
+                eliminatedPlayer.eliminated = true;
+            }
         }
 
+        /**
+         * Centralized Win Condition Evaluation Matrix
+         */
         function checkWinConditions() {
-            const alivePlayers = state.players.filter(p => p.alive);
+            const alivePlayers = getAlivePlayers();
             const aliveImpostor = alivePlayers.find(p => p.role === 'Impostor');
             const aliveDetective = alivePlayers.find(p => p.role === 'Detective');
             const aliveCrewmates = alivePlayers.filter(p => p.role === 'Crewmate');
 
-            // Impostor and Detective only
-            if (aliveImpostor && aliveDetective && aliveCrewmates.length === 0) {
-                state.gameLog.push('Impostor wins: All Crewmates eliminated!');
+            // 1. Impostor Voted Out Rule Check
+            if (!aliveImpostor) {
+                state.gameLog.push('Crewmates win: Impostor was voted out!');
                 return true;
             }
 
-            // Only Impostor and Detective remain
+            // 2. Only Impostor and Detective Remain Rule Check
             if (alivePlayers.length === 2 && aliveImpostor && aliveDetective) {
                 state.gameLog.push('Impostor wins: Only Impostor and Detective remain!');
                 return true;
             }
 
-            // All Crewmates eliminated
-            if (aliveCrewmates.length === 0 && aliveImpostor && aliveDetective) {
+            // 3. All Crewmates Eliminated Rule Check
+            if (aliveCrewmates.length === 0 && aliveImpostor) {
                 state.gameLog.push('Impostor wins: All Crewmates eliminated!');
-                return true;
-            }
-
-            // Impostor voted out
-            if (!aliveImpostor && (aliveDetective || aliveCrewmates.length > 0)) {
-                state.gameLog.push('Crewmates win: Impostor was voted out!');
                 return true;
             }
 
@@ -1176,8 +1211,7 @@
         }
 
         function nextRound() {
-            const checkWin = checkWinConditions();
-            if (checkWin) {
+            if (checkWinConditions()) {
                 state.phase = 'gameover';
                 render();
                 return;
@@ -1191,19 +1225,28 @@
             state.votes = {};
             state.revealed = false;
             state.holdProgress = 0;
+            state.alivePlayers = getAlivePlayers();
 
             render();
         }
 
+        /**
+         * Clean Memory State Purge Engine
+         */
         function resetGame() {
+            if (holdInterval) {
+                clearInterval(holdInterval);
+                holdInterval = null;
+            }
+            isHolding = false;
+
             state = {
-                screen: 'setup',
                 phase: 'setup',
                 players: [],
                 currentPlayerIndex: 0,
+                alivePlayers: [],
                 holdProgress: 0,
                 revealed: false,
-                votingPhase: null,
                 votes: {},
                 selectedVote: null,
                 selectedElimination: null,
@@ -1212,11 +1255,10 @@
                 roundNumber: 1
             };
             
-            if (holdInterval) clearInterval(holdInterval);
             render();
         }
 
-        // Initial render
+        // Initialize App Container Thread
         state.phase = 'setup';
         render();
     </script>
