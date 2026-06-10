@@ -141,6 +141,13 @@
             touch-action: manipulation;
         }
 
+        /* Secondary style variant for the menu selection layout options */
+        button.secondary-btn {
+            background: linear-gradient(135deg, #3b426e 0%, #252a4a 100%);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
         button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 6px 28px rgba(99, 102, 241, 0.4);
@@ -459,13 +466,13 @@
             phase: 'setup',
             players: [],
             currentPlayerIndex: 0,
-            alivePlayers: [], // Roster of active voters for the current round
+            alivePlayers: [], 
             holdProgress: 0,
             revealed: false,
             votes: {},
             selectedVote: null,
             selectedElimination: null,
-            pendingElimination: null, // Staging variable for night elimination
+            pendingElimination: null, 
             eliminationGesture: null,
             gameLog: [],
             roundNumber: 1,
@@ -627,10 +634,7 @@
             if (e && e.cancelable) e.preventDefault();
             if (state.selectedElimination === null) return;
 
-            // RULE CHANGE: Roster captured before elimination occurs. Everyone gets to vote this round.
             state.alivePlayers = getAlivePlayers();
-            
-            // Postpone death state by writing to staging variable
             state.pendingElimination = state.selectedElimination;
 
             state.currentPlayerIndex = 0;
@@ -644,8 +648,6 @@
 
         function renderVoting(app) {
             const currentVoter = state.alivePlayers[state.currentPlayerIndex];
-            
-            // Target selection rules: Can vote for any currently alive player except yourself
             const selectableOptions = getAlivePlayers().filter(p => p.id !== currentVoter.id);
 
             app.innerHTML = `
@@ -685,7 +687,6 @@
                 state.selectedVote = null;
                 render();
             } else {
-                // RULE CHANGE: Voting complete, processing eliminations and round results sequentially
                 processEliminationsAndVotes();
                 
                 if (checkWinConditions()) {
@@ -698,7 +699,6 @@
         }
 
         function processEliminationsAndVotes() {
-            // 1. Process Night-Phase Elimination Staging Roster first
             state.lastNightEliminated = null;
             if (state.pendingElimination && state.pendingElimination !== 'none') {
                 const targetedPlayer = state.players.find(p => p.id === state.pendingElimination);
@@ -711,9 +711,8 @@
                 }
             }
 
-            // 2. Process Ballot Counts Tally Sheet calculations
             const voteCounts = {};
-            const activePool = getAlivePlayers(); // Calculates against players surviving *after* night execution updates
+            const activePool = getAlivePlayers(); 
             
             activePool.forEach(p => { voteCounts[p.id] = 0; });
 
@@ -744,7 +743,7 @@
                     targetPlayer.alive = false;
                     state.lastVotedOut = targetPlayer.name;
                 } else {
-                    state.lastVotedOut = "tie"; // Target was already eliminated during the night phase
+                    state.lastVotedOut = "tie"; 
                 }
             }
         }
@@ -780,7 +779,6 @@
             const det = alive.find(p => p.role === 'Detective');
             const crew = alive.filter(p => p.role === 'Crewmate');
 
-            // Scan game log messages to prevent double tracking overrides
             if (state.gameLog.some(log => log.includes('Detective was eliminated'))) return true;
 
             if (!imp) {
@@ -798,6 +796,7 @@
             return false;
         }
 
+        /* UPDATED: Displays stacked Primary (Same Players) and Secondary (New Players) action hooks */
         function renderGameOver(app) {
             const victoryDeclaration = state.gameLog[state.gameLog.length - 1] || "Game Over";
             app.innerHTML = `
@@ -808,7 +807,14 @@
                         <div class="card" style="width: 100%; text-align: center; border-color: #ff3d5c;">
                             <p class="discussion-text">${victoryDeclaration}</p>
                         </div>
-                        <button onclick="resetGame(event)" ontouchstart="resetGame(event)">Main Menu</button>
+                        
+                        <button onclick="playAgainSamePlayers(event)" ontouchstart="playAgainSamePlayers(event)">
+                            Play Again (Same Players)
+                        </button>
+                        
+                        <button class="secondary-btn" onclick="resetToMainMenu(event)" ontouchstart="resetToMainMenu(event)">
+                            New Players
+                        </button>
                     </div>
                 </div>
             `;
@@ -835,6 +841,79 @@
 
             state.phase = 'reveal';
             state.currentPlayerIndex = 0;
+            render();
+        }
+
+        /* NEW FEATURE UTILITY: Retains current participant parameters, reshuffles profiles, starts role reveal */
+        function playAgainSamePlayers(e) {
+            if (e && e.cancelable) e.preventDefault();
+            if (state.players.length === 0) return;
+
+            console.log("=== EXECUTING: Play Again (Same Players) ===");
+            
+            // Extract existing player names safely
+            const currentNames = state.players.map(p => p.name);
+            
+            // Generate entirely new shuffled roles and elimination gesture context parameters
+            const freshRoles = generateRoles(currentNames.length);
+            state.eliminationGesture = GESTURES[Math.floor(Math.random() * GESTURES.length)];
+
+            // Reset the base player structures array
+            state.players = currentNames.map((name, i) => ({
+                id: i,
+                name: name,
+                role: freshRoles[i],
+                alive: true
+            }));
+
+            // Complete reset of game environmental logs, variables, and tracking matrices
+            state.currentPlayerIndex = 0;
+            state.alivePlayers = [];
+            state.holdProgress = 0;
+            state.revealed = false;
+            state.votes = {};
+            state.selectedVote = null;
+            state.selectedElimination = null;
+            state.pendingElimination = null;
+            state.gameLog = [];
+            state.roundNumber = 1;
+            state.lastVotedOut = null;
+            state.lastNightEliminated = null;
+
+            if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
+            isHolding = false;
+
+            // Route execution flow directly into the role card distribution cycle screen
+            state.phase = 'reveal';
+            render();
+        }
+
+        /* NEW FEATURE UTILITY: Completely purges engine profile logs to allow a fresh start layout initialization */
+        function resetToMainMenu(e) {
+            if (e && e.cancelable) e.preventDefault();
+            console.log("=== EXECUTING: New Players (Full Reset) ===");
+            
+            state = { 
+                phase: 'setup', 
+                players: [], 
+                currentPlayerIndex: 0, 
+                alivePlayers: [], 
+                holdProgress: 0, 
+                revealed: false, 
+                votes: {}, 
+                selectedVote: null, 
+                selectedElimination: null, 
+                pendingElimination: null, 
+                eliminationGesture: null, 
+                gameLog: [], 
+                roundNumber: 1, 
+                lastVotedOut: null, 
+                lastNightEliminated: null 
+            };
+
+            if (holdInterval) { clearInterval(holdInterval); holdInterval = null; }
+            isHolding = false;
+            
             render();
         }
 
@@ -898,12 +977,6 @@
             state.votes = {};
             state.revealed = false;
             state.holdProgress = 0;
-            render();
-        }
-
-        function resetGame(e) {
-            if (e && e.cancelable) e.preventDefault();
-            state = { phase: 'setup', players: [], currentPlayerIndex: 0, alivePlayers: [], holdProgress: 0, revealed: false, votes: {}, selectedVote: null, selectedElimination: null, pendingElimination: null, eliminationGesture: null, gameLog: [], roundNumber: 1, lastVotedOut: null, lastNightEliminated: null };
             render();
         }
 
